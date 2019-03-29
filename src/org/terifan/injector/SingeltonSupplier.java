@@ -32,7 +32,7 @@ class SingeltonSupplier<T> implements Supplier<T>
 		{
 			if (mInstance == null)
 			{
-				mInstance = mInjector.getInstance(mType, mScope);
+				mInstance = mInjector.getInstance(null, mType, mScope);
 			}
 
 			return mInstance;

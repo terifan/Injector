@@ -1,11 +1,14 @@
 package org.terifan.injector;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -59,11 +62,11 @@ public class Injector
 
 	public <T> T getInstance(Class<T> aType)
 	{
-		return getInstance(aType, new Scope());
+		return getInstance(null, aType, new Scope());
 	}
 
 
-	<T> T getInstance(Class<T> aType, Scope aScope)
+	<T> T getInstance(Object aEnclosingInstance, Class<T> aType, Scope aScope)
 	{
 		ArrayList<Binding> list = mBindings.get(aType);
 
@@ -95,7 +98,7 @@ public class Injector
 			throw new InjectionException("Type not bound: " + aType + ", " + aScope);
 		}
 
-		return createInstance(aType);
+		return createInstance(aEnclosingInstance, aType);
 	}
 
 
@@ -138,7 +141,7 @@ public class Injector
 
 			if (annotation != null)
 			{
-				Object fieldValue = getInstance(aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
+				Object fieldValue = getInstance(aInstance, aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
 
 				if (mLog != null)
 				{
@@ -166,7 +169,7 @@ public class Injector
 			if (annotation != null)
 			{
 				aMethod.setAccessible(true);
-				aMethod.invoke(aInstance, createMappedValues(aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
+				aMethod.invoke(aInstance, createMappedValues(aInstance, aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
 			}
 		}
 	};
@@ -211,7 +214,7 @@ public class Injector
 	}
 
 
-	protected <T> T createInstance(Class<T> aType)
+	<T> T createInstance(Object aEnclosingInstance, Class<T> aType)
 	{
 		T instance = null;
 
@@ -237,7 +240,7 @@ public class Injector
 
 				try
 				{
-					instance = (T)constructor.newInstance(createMappedValues(aType, annotation, constructor.getParameterTypes(), constructor.getParameterAnnotations()));
+					instance = (T)constructor.newInstance(createMappedValues(aEnclosingInstance, aType, annotation, constructor.getParameterTypes(), constructor.getParameterAnnotations()));
 				}
 				catch (Exception | Error e)
 				{
@@ -252,14 +255,24 @@ public class Injector
 		{
 			try
 			{
-				Constructor<T> constructor = aType.getDeclaredConstructor();
-				constructor.setAccessible(true);
-				instance = constructor.newInstance();
+				Constructor constructor;
+				try
+				{
+					constructor = aType.getDeclaredConstructor();
+					constructor.setAccessible(true);
+					instance = (T)constructor.newInstance();
+				}
+				catch (Exception e)
+				{
+					constructor = aType.getDeclaredConstructors()[0];
+
+					constructor.setAccessible(true);
+					instance = (T)constructor.newInstance(aEnclosingInstance);
+				}
 			}
 			catch (Exception | Error e)
 			{
-				// ignore
-				e.printStackTrace(System.out);
+				throw new InjectionException(e);
 			}
 		}
 
@@ -274,7 +287,7 @@ public class Injector
 	}
 
 
-	Object[] createMappedValues(Class aScopeType, Inject aInjectAnnotation, Class[] aParamTypes, Annotation[][] aAnnotations)
+	Object[] createMappedValues(Object aEnclosingInstance, Class aScopeType, Inject aInjectAnnotation, Class[] aParamTypes, Annotation[][] aAnnotations)
 	{
 		Object[] values = new Object[aParamTypes.length];
 
@@ -285,15 +298,15 @@ public class Injector
 			String scopeName = aInjectAnnotation.value();
 			boolean optional = aInjectAnnotation.optional();
 
-			for (Annotation ann : aAnnotations[i])
+			for (Annotation annotation : aAnnotations[i])
 			{
-				if (ann instanceof Named)
+				if (annotation instanceof Named)
 				{
-					scopeName = ((Named)ann).value();
+					scopeName = ((Named)annotation).value();
 				}
 			}
 
-			values[i] = getInstance(paramType, new Scope(scopeName, aScopeType, optional));
+			values[i] = getInstance(aEnclosingInstance, paramType, new Scope(scopeName, aScopeType, optional));
 		}
 
 		return values;

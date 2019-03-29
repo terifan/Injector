@@ -78,7 +78,7 @@ public class Binding
 			return mInjector.injectMembers(mSupplier.get());
 		}
 
-		return mInjector.createInstance(mToType != null ? mToType : mFromType);
+		return mInjector.createInstance(null, mToType != null ? mToType : mFromType);
 	}
 
 

@@ -221,6 +221,54 @@ public class InjectNGTest
 	}
 
 
+	@Test
+	public void testInjectStaticClassInnerInstance()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(String.class).named("value").in(InjectStaticClassInnerInstanceSample.class).toInstance("OUTER");
+		injector.bind(String.class).named("value").in(InjectStaticClassInnerInstanceSample.InnerScopeSample.class).toInstance("INNER");
+
+		InjectStaticClassInnerInstanceSample instance = injector.getInstance(InjectStaticClassInnerInstanceSample.class);
+
+		assertNotNull(instance);
+		assertEquals(instance.mValue, "OUTER");
+		assertEquals(instance.mInstance.mValue, "INNER");
+	}
+
+
+	@Test
+	public void testInjectClassInnerInstanceSample()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(String.class).named("value").in(InjectClassInnerInstanceSample.class).toInstance("OUTER");
+		injector.bind(String.class).named("value").in(InjectClassInnerInstanceSample.InnerScopeSample.class).toInstance("INNER");
+
+		InjectClassInnerInstanceSample instance = injector.getInstance(InjectClassInnerInstanceSample.class);
+
+		assertNotNull(instance);
+		assertEquals(instance.mValue, "OUTER");
+		assertEquals(instance.mInstance.mValue, "INNER");
+	}
+
+
+	@Test
+	public void testInjectClassStaticInnerInstanceSample()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(String.class).named("value").in(InjectClassStaticInnerInstanceSample.class).toInstance("OUTER");
+		injector.bind(String.class).named("value").in(InjectClassStaticInnerInstanceSample.InnerScopeSample.class).toInstance("INNER");
+
+		InjectClassStaticInnerInstanceSample instance = injector.getInstance(InjectClassStaticInnerInstanceSample.class);
+
+		assertNotNull(instance);
+		assertEquals(instance.mValue, "OUTER");
+		assertEquals(instance.mInstance.mValue, "INNER");
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -335,5 +383,41 @@ public class InjectNGTest
 		{
 			mFruit = aFruit;
 		}
+	}
+
+
+	static class InjectStaticClassInnerInstanceSample
+	{
+		@Inject("value") String mValue;
+		@Inject InnerScopeSample mInstance;
+
+		class InnerScopeSample
+		{
+			@Inject("value") String mValue;
+		}
+	}
+
+
+	class InjectClassInnerInstanceSample
+	{
+		@Inject("value") String mValue;
+		@Inject InnerScopeSample mInstance;
+
+		class InnerScopeSample
+		{
+			@Inject("value") String mValue;
+		}
+	}
+}
+
+
+class InjectClassStaticInnerInstanceSample
+{
+	@Inject("value") String mValue;
+	@Inject InnerScopeSample mInstance;
+
+	static class InnerScopeSample
+	{
+		@Inject("value") String mValue;
 	}
 }
