@@ -13,7 +13,7 @@ import org.terifan.injector.Injector;
 import org.terifan.injector.PostConstruct;
 
 
-public class Demo
+public class DemoSmallForm
 {
 	public static void main(String... args)
 	{
@@ -27,6 +27,7 @@ public class Demo
 			// when developing & testing
 			injector.bind(UserService.class).toInstance(new MockUserService(new User("dave", "asasasasas asasasasas"), new User("steve", "ghghghghgh ghghghgh ghghghgh")));
 
+			// replace style
 			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
 
 			UserPanel panel = injector.getInstance(UserPanel.class);
@@ -62,11 +63,6 @@ public class Demo
 			mText = aText;
 			mBackground = aBackground;
 		}
-	}
-
-
-	static class XStyle extends Style
-	{
 	}
 
 
