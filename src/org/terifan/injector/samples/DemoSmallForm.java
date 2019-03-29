@@ -21,6 +21,8 @@ public class DemoSmallForm
 		{
 			Injector injector = new Injector();
 
+			injector.setLog(System.out);
+
 			// normal running
 //			injector.bind(UserService.class).asSingleton();
 

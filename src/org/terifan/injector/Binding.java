@@ -52,9 +52,7 @@ public class Binding
 
 	public Binding to(Class aToType)
 	{
-		System.out.println("#");
 		mToType = aToType;
-		System.out.println(this);
 		return this;
 	}
 

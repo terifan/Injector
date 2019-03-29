@@ -1,5 +1,6 @@
 package org.terifan.injector;
 
+import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -15,11 +16,19 @@ public class Injector
 {
 	private final HashMap<Class, ArrayList<Binding>> mBindings;
 	private boolean mStrict;
+	private PrintStream mLog;
 
 
 	public Injector()
 	{
 		mBindings = new HashMap<>();
+	}
+
+
+	public Injector setLog(PrintStream aLog)
+	{
+		mLog = aLog;
+		return this;
 	}
 
 
@@ -43,7 +52,7 @@ public class Injector
 	public Binding bind(Class aType)
 	{
 		Binding binding = new Binding(this, aType, new Scope());
-		mBindings.computeIfAbsent(aType, e->new ArrayList<>()).add(binding);
+		mBindings.computeIfAbsent(aType, e -> new ArrayList<>()).add(binding);
 		return binding;
 	}
 
@@ -100,15 +109,19 @@ public class Injector
 		return aInstance;
 	}
 
-
 	private final Visitor mPostConstructVisitor = new Visitor()
 	{
 		@Override
 		public void visitMethod(Object aInstance, Class aType, Method aMethod) throws Exception
 		{
-			if (aMethod.getAnnotation(PostConstruct.class) != null)
+			PostConstruct annotation = aMethod.getAnnotation(PostConstruct.class);
+
+			if (annotation != null)
 			{
-				logPostConstruct(aType, aMethod);
+				if (mLog != null)
+				{
+					mLog.printf("Invoking PostConstruct method [%s] in instance of [%s]%n", aMethod.getName(), aType.getSimpleName());
+				}
 
 				aMethod.setAccessible(true);
 				aMethod.invoke(aInstance);
@@ -116,19 +129,28 @@ public class Injector
 		}
 	};
 
-
 	private final Visitor mInjectVisitor = new Visitor()
 	{
 		@Override
 		public void visitField(Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
 		{
-			if (aField.getAnnotation(Inject.class) != null)
-			{
-				Inject annotation = aField.getAnnotation(Inject.class);
+			Inject annotation = aField.getAnnotation(Inject.class);
 
+			if (annotation != null)
+			{
 				Object fieldValue = getInstance(aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
 
-				logInjection(aInstance, aField, fieldValue, annotation);
+				if (mLog != null)
+				{
+					if (getName(annotation).isEmpty())
+					{
+						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
+					}
+					else
+					{
+						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), getName(annotation), aInstance.getClass().getSimpleName(), aField.getName());
+					}
+				}
 
 				aField.setAccessible(true);
 				aField.set(aInstance, fieldValue);
@@ -184,16 +206,14 @@ public class Injector
 		}
 		catch (Exception | Error e)
 		{
-			throw new IllegalArgumentException(e);
+			throw new InjectionException(e);
 		}
 	}
 
 
-	<T> T createInstance(Class<T> aType)
+	protected <T> T createInstance(Class<T> aType)
 	{
 		T instance = null;
-
-		System.out.println("#"+aType.getConstructors().length);
 
 		for (Constructor constructor : aType.getConstructors())
 		{
@@ -201,7 +221,19 @@ public class Injector
 
 			if (annotation != null)
 			{
-				logCreation(aType, constructor);
+				if (mLog != null)
+				{
+					StringBuilder sb = new StringBuilder();
+					for (Class cls : constructor.getParameterTypes())
+					{
+						if (sb.length() > 0)
+						{
+							sb.append(", ");
+						}
+						sb.append(cls.getSimpleName());
+					}
+					mLog.printf("Creating instance of [%s] using constructor [%s]%n", aType.getSimpleName(), sb);
+				}
 
 				try
 				{
@@ -265,40 +297,6 @@ public class Injector
 		}
 
 		return values;
-	}
-
-
-	private void logInjection(Object aInstance, Field aField, Object aMappedType, Inject aAnnotation)
-	{
-		if (getName(aAnnotation).isEmpty())
-		{
-			System.out.printf("Injecting [%s] instance into [%s] instance field [%s]%n", aMappedType==null?"null":aMappedType.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
-		}
-		else
-		{
-			System.out.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", aMappedType==null?"null":aMappedType.getClass().getSimpleName(), getName(aAnnotation), aInstance.getClass().getSimpleName(), aField.getName());
-		}
-	}
-
-
-	private void logCreation(Class aType, Constructor aConstructor)
-	{
-		StringBuilder sb = new StringBuilder();
-		for (Class cls : aConstructor.getParameterTypes())
-		{
-			if (sb.length() > 0)
-			{
-				sb.append(", ");
-			}
-			sb.append(cls.getSimpleName());
-		}
-		System.out.printf("Creating instance of [%s] using constructor [%s]%n", aType.getSimpleName(), sb);
-	}
-
-
-	private void logPostConstruct(Class aType, Method aMethod)
-	{
-		System.out.printf("Invoking PostConstruct method [%s] in instance of [%s]%n", aMethod.getName(), aType.getSimpleName());
 	}
 
 
