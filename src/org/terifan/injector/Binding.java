@@ -75,11 +75,6 @@ public class Binding
 	{
 		if (mSupplier != null)
 		{
-			return mSupplier.get();
-		}
-
-		if (mSupplier != null)
-		{
 			return mInjector.injectMembers(mSupplier.get());
 		}
 
