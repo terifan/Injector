@@ -285,6 +285,22 @@ public class InjectNGTest
 	}
 
 
+	@Test
+	public void testSingletonAnnotation()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(SingletonAnnotationSample.class).to(SingletonAnnotationSample.class);
+
+		SingletonAnnotationSample instance1 = injector.getInstance(SingletonAnnotationSample.class);
+		SingletonAnnotationSample instance2 = injector.getInstance(SingletonAnnotationSample.class);
+
+		assertNotNull(instance1);
+		assertNotNull(instance2);
+		assertSame(instance1, instance2);
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -431,12 +447,18 @@ public class InjectNGTest
 		String mName;
 		String mPhone;
 
-		@Inject("callme")
+		@Inject
 		void callMe(@Named("name") String aName, @Named("phone") String aPhone)
 		{
 			mName = aName;
 			mPhone = aPhone;
 		}
+	}
+
+
+	@Singleton
+	class SingletonAnnotationSample
+	{
 	}
 }
 

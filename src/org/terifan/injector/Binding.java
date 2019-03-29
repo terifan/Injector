@@ -52,7 +52,15 @@ public class Binding
 
 	public Binding to(Class aToType)
 	{
-		mToType = aToType;
+		if (aToType.getAnnotation(Singleton.class) != null)
+		{
+			mSupplier = new SingeltonSupplier(mInjector, aToType, mScope);
+		}
+		else
+		{
+			mToType = aToType;
+		}
+
 		return this;
 	}
 

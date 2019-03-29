@@ -55,7 +55,9 @@ public class Injector
 	public Binding bind(Class aType)
 	{
 		Binding binding = new Binding(this, aType, new Scope());
+
 		mBindings.computeIfAbsent(aType, e -> new ArrayList<>()).add(binding);
+
 		return binding;
 	}
 
