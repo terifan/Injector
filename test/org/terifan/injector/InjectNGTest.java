@@ -269,6 +269,22 @@ public class InjectNGTest
 	}
 
 
+	@Test
+	public void testNamedParameters()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(String.class).named("name").in(NamedParametersSample.class).toInstance("dave");
+		injector.bind(String.class).named("phone").in(NamedParametersSample.class).toInstance("123");
+
+		NamedParametersSample instance = injector.getInstance(NamedParametersSample.class);
+
+		assertNotNull(instance);
+		assertEquals(instance.mName, "dave");
+		assertEquals(instance.mPhone, "123");
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -406,6 +422,20 @@ public class InjectNGTest
 		class InnerScopeSample
 		{
 			@Inject("value") String mValue;
+		}
+	}
+
+
+	class NamedParametersSample
+	{
+		String mName;
+		String mPhone;
+
+		@Inject("callme")
+		void callMe(@Named("name") String aName, @Named("phone") String aPhone)
+		{
+			mName = aName;
+			mPhone = aPhone;
 		}
 	}
 }
