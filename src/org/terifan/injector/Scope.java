@@ -41,7 +41,7 @@ class Scope
 
 	public void setType(Class aType)
 	{
-		mType = aType;
+		this.mType = aType;
 	}
 
 
@@ -53,7 +53,7 @@ class Scope
 
 	public void setOptional(boolean aOptional)
 	{
-		mOptional = aOptional;
+		this.mOptional = aOptional;
 	}
 
 
