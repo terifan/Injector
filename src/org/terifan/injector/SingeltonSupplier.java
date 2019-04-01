@@ -9,11 +9,13 @@ class SingeltonSupplier<T> implements Supplier<T>
 	private Class<T> mType;
 	private Scope mScope;
 	private T mInstance;
+	private Context mContext;
 
 
-	public SingeltonSupplier(Injector aInjector, Class aType, Scope aScope)
+	public SingeltonSupplier(Injector aInjector, Context aContext, Class aType, Scope aScope)
 	{
 		mInjector = aInjector;
+		mContext = aContext;
 		mType = aType;
 		mScope = aScope;
 	}
@@ -32,7 +34,7 @@ class SingeltonSupplier<T> implements Supplier<T>
 		{
 			if (mInstance == null)
 			{
-				mInstance = mInjector.getInstance(null, mType, mScope);
+				mInstance = mInjector.getInstance(mContext.next(null), mType, mScope);
 			}
 
 			return mInstance;

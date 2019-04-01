@@ -6,15 +6,17 @@ import java.util.function.Supplier;
 public class Binding
 {
 	private final Injector mInjector;
+	private final Context mContext;
 	private final Scope mScope;
 	private final Class mFromType;
 	private Class mToType;
 	private Supplier mSupplier;
 
 
-	Binding(Injector aInjector, Class aFromType, Scope aScope)
+	Binding(Injector aInjector, Context aContext, Class aFromType, Scope aScope)
 	{
 		mInjector = aInjector;
+		mContext = aContext;
 		mFromType = aFromType;
 		mScope = aScope;
 	}
@@ -34,7 +36,7 @@ public class Binding
 
 	public void asSingleton()
 	{
-		mSupplier = new SingeltonSupplier(mInjector, mToType != null ? mToType : mFromType, mScope);
+		mSupplier = new SingeltonSupplier(mInjector, mContext, mToType != null ? mToType : mFromType, mScope);
 	}
 
 
@@ -54,7 +56,7 @@ public class Binding
 	{
 		if (aToType.getAnnotation(Singleton.class) != null)
 		{
-			mSupplier = new SingeltonSupplier(mInjector, aToType, mScope);
+			mSupplier = new SingeltonSupplier(mInjector, mContext, aToType, mScope);
 		}
 		else
 		{
@@ -86,7 +88,7 @@ public class Binding
 			return mInjector.injectMembers(mSupplier.get());
 		}
 
-		return mInjector.createInstance(null, mToType != null ? mToType : mFromType);
+		return mInjector.createInstance(mContext.next(null), mToType != null ? mToType : mFromType);
 	}
 
 

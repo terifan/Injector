@@ -1,14 +1,11 @@
 package org.terifan.injector;
 
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -54,7 +51,7 @@ public class Injector
 
 	public Binding bind(Class aType)
 	{
-		Binding binding = new Binding(this, aType, new Scope());
+		Binding binding = new Binding(this, new Context(), aType, new Scope());
 
 		mBindings.computeIfAbsent(aType, e -> new ArrayList<>()).add(binding);
 
@@ -64,11 +61,11 @@ public class Injector
 
 	public <T> T getInstance(Class<T> aType)
 	{
-		return getInstance(null, aType, new Scope());
+		return getInstance(new Context(), aType, new Scope());
 	}
 
 
-	<T> T getInstance(Object aEnclosingInstance, Class<T> aType, Scope aScope)
+	<T> T getInstance(Context aContext, Class<T> aType, Scope aScope)
 	{
 		ArrayList<Binding> list = mBindings.get(aType);
 
@@ -100,7 +97,7 @@ public class Injector
 			throw new InjectionException("Type not bound: " + aType + ", " + aScope);
 		}
 
-		return createInstance(aEnclosingInstance, aType);
+		return createInstance(aContext, aType);
 	}
 
 
@@ -109,7 +106,7 @@ public class Injector
 	 */
 	public Object injectMembers(Object aInstance)
 	{
-		visit(aInstance, mInjectVisitor);
+		visit(new Context(), aInstance, mInjectVisitor);
 
 		return aInstance;
 	}
@@ -117,7 +114,7 @@ public class Injector
 	private final Visitor mPostConstructVisitor = new Visitor()
 	{
 		@Override
-		public void visitMethod(Object aInstance, Class aType, Method aMethod) throws Exception
+		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws Exception
 		{
 			PostConstruct annotation = aMethod.getAnnotation(PostConstruct.class);
 
@@ -137,13 +134,13 @@ public class Injector
 	private final Visitor mInjectVisitor = new Visitor()
 	{
 		@Override
-		public void visitField(Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
+		public void visitField(Context aContext, Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
 		{
 			Inject annotation = aField.getAnnotation(Inject.class);
 
 			if (annotation != null)
 			{
-				Object fieldValue = getInstance(aInstance, aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
+				Object fieldValue = getInstance(aContext.next(aInstance), aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
 
 				if (mLog != null)
 				{
@@ -164,20 +161,20 @@ public class Injector
 
 
 		@Override
-		public void visitMethod(Object aInstance, Class aType, Method aMethod) throws IllegalAccessException, InvocationTargetException
+		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws IllegalAccessException, InvocationTargetException
 		{
 			Inject annotation = aMethod.getAnnotation(Inject.class);
 
 			if (annotation != null)
 			{
 				aMethod.setAccessible(true);
-				aMethod.invoke(aInstance, createMappedValues(aInstance, aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
+				aMethod.invoke(aInstance, createMappedValues(aContext.next(aInstance), aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
 			}
 		}
 	};
 
 
-	private void visit(Object aInstance, Visitor aVisitor)
+	private void visit(Context aContext, Object aInstance, Visitor aVisitor)
 	{
 		try
 		{
@@ -190,16 +187,16 @@ public class Injector
 					return;
 				}
 
-				aVisitor.visitClass(aInstance, type);
+				aVisitor.visitClass(aContext, aInstance, type);
 
 				for (Field field : type.getDeclaredFields())
 				{
-					aVisitor.visitField(aInstance, type, field);
+					aVisitor.visitField(aContext, aInstance, type, field);
 				}
 
 				for (Method method : type.getDeclaredMethods())
 				{
-					aVisitor.visitMethod(aInstance, type, method);
+					aVisitor.visitMethod(aContext, aInstance, type, method);
 				}
 
 				type = type.getSuperclass();
@@ -216,7 +213,7 @@ public class Injector
 	}
 
 
-	<T> T createInstance(Object aEnclosingInstance, Class<T> aType)
+	<T> T createInstance(Context aContext, Class<T> aType)
 	{
 		T instance = null;
 
@@ -242,7 +239,7 @@ public class Injector
 
 				try
 				{
-					instance = (T)constructor.newInstance(createMappedValues(aEnclosingInstance, aType, annotation, constructor.getParameterTypes(), constructor.getParameterAnnotations()));
+					instance = (T)constructor.newInstance(createMappedValues(aContext, aType, annotation, constructor.getParameterTypes(), constructor.getParameterAnnotations()));
 				}
 				catch (Exception | Error e)
 				{
@@ -257,19 +254,18 @@ public class Injector
 		{
 			try
 			{
-				Constructor constructor;
+				// TODO: improve
 				try
 				{
-					constructor = aType.getDeclaredConstructor();
+					Constructor constructor = aType.getDeclaredConstructor();
 					constructor.setAccessible(true);
 					instance = (T)constructor.newInstance();
 				}
-				catch (Exception e)
+				catch (NoSuchMethodException e)
 				{
-					constructor = aType.getDeclaredConstructors()[0];
-
+					Constructor constructor = aType.getDeclaredConstructors()[0];
 					constructor.setAccessible(true);
-					instance = (T)constructor.newInstance(aEnclosingInstance);
+					instance = (T)constructor.newInstance(aContext.mEnclosingInstance);
 				}
 			}
 			catch (Exception | Error e)
@@ -282,14 +278,14 @@ public class Injector
 		{
 			injectMembers(instance);
 
-			visit(instance, mPostConstructVisitor);
+			visit(aContext, instance, mPostConstructVisitor);
 		}
 
 		return instance;
 	}
 
 
-	Object[] createMappedValues(Object aEnclosingInstance, Class aScopeType, Inject aInjectAnnotation, Class[] aParamTypes, Annotation[][] aAnnotations)
+	Object[] createMappedValues(Context aContext, Class aScopeType, Inject aInjectAnnotation, Class[] aParamTypes, Annotation[][] aAnnotations)
 	{
 		Object[] values = new Object[aParamTypes.length];
 
@@ -308,7 +304,7 @@ public class Injector
 				}
 			}
 
-			values[i] = getInstance(aEnclosingInstance, paramType, new Scope(scopeName, aScopeType, optional));
+			values[i] = getInstance(aContext, paramType, new Scope(scopeName, aScopeType, optional));
 		}
 
 		return values;
