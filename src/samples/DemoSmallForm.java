@@ -1,4 +1,4 @@
-package org.terifan.injector.samples;
+package samples;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

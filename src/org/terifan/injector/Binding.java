@@ -3,6 +3,7 @@ package org.terifan.injector;
 import java.util.function.Supplier;
 
 
+
 public class Binding
 {
 	private final Injector mInjector;
@@ -10,7 +11,7 @@ public class Binding
 	private final Scope mScope;
 	private final Class mFromType;
 	private Class mToType;
-	private Supplier mSupplier;
+	private Provider mProvider;
 
 
 	Binding(Injector aInjector, Context aContext, Class aFromType, Scope aScope)
@@ -36,19 +37,26 @@ public class Binding
 
 	public void asSingleton()
 	{
-		mSupplier = new SingeltonSupplier(mInjector, mContext, mToType != null ? mToType : mFromType, mScope);
+		mProvider = new SingeltonProvider(mInjector, mToType != null ? mToType : mFromType);
 	}
 
 
 	public void toInstance(Object aInstance)
 	{
-		mSupplier = new SingeltonSupplier(aInstance);
+		mProvider = new SingeltonProvider(mInjector, aInstance);
 	}
 
 
 	public void toProvider(Supplier aSupplier)
 	{
-		mSupplier = aSupplier;
+		mProvider = new Provider(mInjector)
+		{
+			@Override
+			public Object get(Context aContext)
+			{
+				return mInjector.injectMembers(aContext, aSupplier.get());
+			}
+		};
 	}
 
 
@@ -56,7 +64,7 @@ public class Binding
 	{
 		if (aToType.getAnnotation(Singleton.class) != null)
 		{
-			mSupplier = new SingeltonSupplier(mInjector, mContext, aToType, mScope);
+			mProvider = new SingeltonProvider(mInjector, aToType);
 		}
 		else
 		{
@@ -81,20 +89,20 @@ public class Binding
 	}
 
 
-	Object getInstance()
+	Object getInstance(Context aContext)
 	{
-		if (mSupplier != null)
+		if (mProvider != null)
 		{
-			return mInjector.injectMembers(mSupplier.get());
+			return mProvider.get(aContext);
 		}
 
-		return mInjector.createInstance(mContext.next(null), mToType != null ? mToType : mFromType);
+		return mInjector.createInstance(aContext, mToType != null ? mToType : mFromType);
 	}
 
 
 	@Override
 	public String toString()
 	{
-		return "Binding{" + "mScope=" + mScope + ", mToType=" + mToType + ", mSupplier=" + mSupplier + '}';
+		return "Binding{" + "mScope=" + mScope + ", mToType=" + mToType + ", mSupplier=" + mProvider + '}';
 	}
 }

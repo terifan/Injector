@@ -301,6 +301,17 @@ public class InjectNGTest
 	}
 
 
+	@Test(expectedExceptions = InjectionException.class, expectedExceptionsMessageRegExp = "Circular dependency detected.*")
+	public void testCircularError()
+	{
+		Injector injector = new Injector();
+
+		CircularSample1 instance = injector.getInstance(CircularSample1.class);
+
+		assertNotNull(instance);
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -459,6 +470,24 @@ public class InjectNGTest
 	@Singleton
 	class SingletonAnnotationSample
 	{
+	}
+
+
+	static class CircularSample1
+	{
+		@Inject CircularSample2 instance;
+	}
+
+
+	static class CircularSample2
+	{
+		@Inject CircularSample3 instance;
+	}
+
+
+	static class CircularSample3
+	{
+		@Inject CircularSample1 instance;
 	}
 }
 

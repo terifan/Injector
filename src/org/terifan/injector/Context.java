@@ -3,10 +3,10 @@ package org.terifan.injector;
 import java.util.ArrayList;
 
 
-
 class Context
 {
 	Context mParent;
+	Class mEnclosingType;
 	Object mEnclosingInstance;
 
 
@@ -15,18 +15,22 @@ class Context
 	}
 
 
-	private Context(Context aParent, Object aInstance)
+	public Context(Context aParent, Object aEnclosingInstance)
 	{
 		mParent = aParent;
-		mEnclosingInstance = aInstance;
+		mEnclosingInstance = aEnclosingInstance;
+		mEnclosingType = aEnclosingInstance.getClass();
 
-		System.out.println(this);
-	}
+		Context ctx = mParent;
+		while (ctx != null && ctx.mEnclosingType != null)
+		{
+			if (ctx.mEnclosingType == mEnclosingType)
+			{
+				throw new InjectionException("Circular dependency detected: " + this);
+			}
 
-
-	public Context next(Object aInstance)
-	{
-		return new Context(this, aInstance);
+			ctx = ctx.mParent;
+		}
 	}
 
 
@@ -35,9 +39,9 @@ class Context
 	{
 		ArrayList<String> list = new ArrayList<>();
 		Context ctx = this;
-		while (ctx != null)
+		while (ctx != null && ctx.mEnclosingType != null)
 		{
-			list.add(ctx.mEnclosingInstance == null ? null : ctx.mEnclosingInstance.toString());
+			list.add(ctx.mEnclosingType.getSimpleName());
 			ctx = ctx.mParent;
 		}
 		return list.toString();

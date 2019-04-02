@@ -77,7 +77,7 @@ public class Injector
 
 				if ((bindingScope.getType() == null || bindingScope.getType() == aScope.getType()) && Objects.equals(aScope.getName(), bindingScope.getName()))
 				{
-					return (T)binding.getInstance();
+					return (T)binding.getInstance(aContext);
 				}
 			}
 		}
@@ -106,72 +106,16 @@ public class Injector
 	 */
 	public Object injectMembers(Object aInstance)
 	{
-		visit(new Context(), aInstance, mInjectVisitor);
+		return injectMembers(new Context(), aInstance);
+	}
+
+
+	Object injectMembers(Context aContext, Object aInstance)
+	{
+		visit(aContext, aInstance, mInjectVisitor);
 
 		return aInstance;
 	}
-
-	private final Visitor mPostConstructVisitor = new Visitor()
-	{
-		@Override
-		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws Exception
-		{
-			PostConstruct annotation = aMethod.getAnnotation(PostConstruct.class);
-
-			if (annotation != null)
-			{
-				if (mLog != null)
-				{
-					mLog.printf("Invoking PostConstruct method [%s] in instance of [%s]%n", aMethod.getName(), aType.getSimpleName());
-				}
-
-				aMethod.setAccessible(true);
-				aMethod.invoke(aInstance);
-			}
-		}
-	};
-
-	private final Visitor mInjectVisitor = new Visitor()
-	{
-		@Override
-		public void visitField(Context aContext, Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
-		{
-			Inject annotation = aField.getAnnotation(Inject.class);
-
-			if (annotation != null)
-			{
-				Object fieldValue = getInstance(aContext.next(aInstance), aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
-
-				if (mLog != null)
-				{
-					if (getName(annotation).isEmpty())
-					{
-						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
-					}
-					else
-					{
-						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), getName(annotation), aInstance.getClass().getSimpleName(), aField.getName());
-					}
-				}
-
-				aField.setAccessible(true);
-				aField.set(aInstance, fieldValue);
-			}
-		}
-
-
-		@Override
-		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws IllegalAccessException, InvocationTargetException
-		{
-			Inject annotation = aMethod.getAnnotation(Inject.class);
-
-			if (annotation != null)
-			{
-				aMethod.setAccessible(true);
-				aMethod.invoke(aInstance, createMappedValues(aContext.next(aInstance), aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
-			}
-		}
-	};
 
 
 	private void visit(Context aContext, Object aInstance, Visitor aVisitor)
@@ -254,7 +198,6 @@ public class Injector
 		{
 			try
 			{
-				// TODO: improve
 				try
 				{
 					Constructor constructor = aType.getDeclaredConstructor();
@@ -263,8 +206,12 @@ public class Injector
 				}
 				catch (NoSuchMethodException e)
 				{
+					// TODO: detect inner classes properly
+
+					// pass the enclosing object instance to the constructor.
 					Constructor constructor = aType.getDeclaredConstructors()[0];
 					constructor.setAccessible(true);
+
 					instance = (T)constructor.newInstance(aContext.mEnclosingInstance);
 				}
 			}
@@ -276,7 +223,7 @@ public class Injector
 
 		if (instance != null)
 		{
-			injectMembers(instance);
+			injectMembers(aContext, instance);
 
 			visit(aContext, instance, mPostConstructVisitor);
 		}
@@ -342,4 +289,66 @@ public class Injector
 		sb.append("\tmStrict=" + mStrict + "\n}");
 		return sb.toString();
 	}
+
+	private final Visitor mPostConstructVisitor = new Visitor()
+	{
+		@Override
+		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws Exception
+		{
+			PostConstruct annotation = aMethod.getAnnotation(PostConstruct.class);
+
+			if (annotation != null)
+			{
+				if (mLog != null)
+				{
+					mLog.printf("Invoking PostConstruct method [%s] in instance of [%s]%n", aMethod.getName(), aType.getSimpleName());
+				}
+
+				aMethod.setAccessible(true);
+				aMethod.invoke(aInstance);
+			}
+		}
+	};
+
+	private final Visitor mInjectVisitor = new Visitor()
+	{
+		@Override
+		public void visitField(Context aContext, Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
+		{
+			Inject annotation = aField.getAnnotation(Inject.class);
+
+			if (annotation != null)
+			{
+				Object fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
+
+				if (mLog != null)
+				{
+					if (getName(annotation).isEmpty())
+					{
+						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
+					}
+					else
+					{
+						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), getName(annotation), aInstance.getClass().getSimpleName(), aField.getName());
+					}
+				}
+
+				aField.setAccessible(true);
+				aField.set(aInstance, fieldValue);
+			}
+		}
+
+
+		@Override
+		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws IllegalAccessException, InvocationTargetException
+		{
+			Inject annotation = aMethod.getAnnotation(Inject.class);
+
+			if (annotation != null)
+			{
+				aMethod.setAccessible(true);
+				aMethod.invoke(aInstance, createMappedValues(new Context(aContext, aInstance), aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
+			}
+		}
+	};
 }

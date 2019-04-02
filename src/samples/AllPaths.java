@@ -1,4 +1,4 @@
-package org.terifan.injector.samples;
+package samples;
 
 import java.util.Date;
 import org.terifan.injector.Injector;
