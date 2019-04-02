@@ -15,7 +15,6 @@ import java.lang.annotation.Target;
 	})
 public @interface Inject
 {
-	String value() default "";
 	String name() default "";
 	boolean optional() default false;
 }

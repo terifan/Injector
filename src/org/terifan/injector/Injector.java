@@ -240,7 +240,7 @@ public class Injector
 		{
 			Class paramType = aParamTypes[i];
 
-			String scopeName = aInjectAnnotation.value();
+			String scopeName = aInjectAnnotation.name();
 			boolean optional = aInjectAnnotation.optional();
 
 			for (Annotation annotation : aAnnotations[i])
@@ -255,12 +255,6 @@ public class Injector
 		}
 
 		return values;
-	}
-
-
-	private String getName(Inject aAnnotation)
-	{
-		return aAnnotation.name().isEmpty() ? aAnnotation.value() : aAnnotation.name();
 	}
 
 
@@ -315,21 +309,25 @@ public class Injector
 		@Override
 		public void visitField(Context aContext, Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
 		{
-			Inject annotation = aField.getAnnotation(Inject.class);
+			Inject injectAnnotation = aField.getAnnotation(Inject.class);
 
-			if (annotation != null)
+			if (injectAnnotation != null)
 			{
-				Object fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), new Scope(getName(annotation), aType, annotation.optional()));
+				Named namedAnnotation = aField.getAnnotation(Named.class);
+
+				String name = namedAnnotation != null ? namedAnnotation.value() : injectAnnotation.name();
+
+				Object fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), new Scope(name, aType, injectAnnotation.optional()));
 
 				if (mLog != null)
 				{
-					if (getName(annotation).isEmpty())
+					if (name.isEmpty())
 					{
 						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
 					}
 					else
 					{
-						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), getName(annotation), aInstance.getClass().getSimpleName(), aField.getName());
+						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), name, aInstance.getClass().getSimpleName(), aField.getName());
 					}
 				}
 

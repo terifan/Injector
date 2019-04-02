@@ -99,7 +99,7 @@ public class InjectNGTest
 	@Test
 	public void testBindInstance()
 	{
-		Apple expected = new Apple(null,null);
+		Apple expected = new Apple(null, null);
 
 		Injector injector = new Injector();
 
@@ -114,11 +114,31 @@ public class InjectNGTest
 
 
 	@Test
+	public void testNamed()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(String.class).named("a").toInstance("A");
+		injector.bind(String.class).named("b").toInstance("B");
+		injector.bind(String.class).named("c").toInstance("C");
+		injector.bind(String.class).named("d").toInstance("D");
+
+		NamedSample instance = injector.getInstance(NamedSample.class);
+
+		assertNotNull(instance);
+		assertEquals(instance.a, "A");
+		assertEquals(instance.b, "B");
+		assertEquals(instance.c, "C");
+		assertEquals(instance.d, "D");
+	}
+
+
+	@Test
 	public void testBindProvider()
 	{
 		Injector injector = new Injector();
 
-		injector.bind(Fruit.class).toProvider(()->new Apple(null,null));
+		injector.bind(Fruit.class).toProvider(() -> new Apple(null, null));
 
 		Fruit fruit1 = injector.getInstance(Fruit.class);
 		Fruit fruit2 = injector.getInstance(Fruit.class);
@@ -319,11 +339,13 @@ public class InjectNGTest
 		FruitProperty mFruitProperty3;
 		@Inject(optional = true) Color mFruitProperty4;
 
+
 		@Inject
 		public Fruit(FruitProperty aFruitProperty2)
 		{
 			mFruitProperty2 = aFruitProperty2;
 		}
+
 
 		@Inject
 		public void initFruit(FruitProperty aFruitProperty3)
@@ -340,6 +362,7 @@ public class InjectNGTest
 		AppleProperty mAppleProperty3;
 		@Inject(optional = true) Color mAppleProperty4;
 
+
 		@Inject
 		public Apple(AppleProperty aAppleProperty2, FruitProperty aFruitProperty2)
 		{
@@ -347,6 +370,7 @@ public class InjectNGTest
 
 			mAppleProperty2 = aAppleProperty2;
 		}
+
 
 		@Inject
 		public void initApple(AppleProperty aAppleProperty3)
@@ -371,10 +395,32 @@ public class InjectNGTest
 	{
 		boolean mPostConstructWasRun;
 
+
 		@PostConstruct
 		public void init()
 		{
 			mPostConstructWasRun = true;
+		}
+	}
+
+
+	static class NamedSample
+	{
+		@Inject(name = "a") String a;
+		@Inject @Named("b") String b;
+		String c;
+		String d;
+
+		@Inject
+		void method1(@Named("c") String c)
+		{
+			this.c = c;
+		}
+
+		@Inject(name = "d")
+		void method2(String d)
+		{
+			this.d = d;
 		}
 	}
 
@@ -408,6 +454,7 @@ public class InjectNGTest
 		String mValue;
 		Fruit mFruit;
 
+
 		@Inject
 		public ConstructorSample(@Named("value") String aValue, Fruit aFruit)
 		{
@@ -421,6 +468,7 @@ public class InjectNGTest
 	{
 		Fruit mFruit;
 
+
 		@Inject
 		public void setFruit(Fruit aFruit)
 		{
@@ -431,24 +479,26 @@ public class InjectNGTest
 
 	static class InjectStaticClassInnerInstanceSample
 	{
-		@Inject("value") String mValue;
+		@Inject(name = "value") String mValue;
 		@Inject InnerScopeSample mInstance;
+
 
 		class InnerScopeSample
 		{
-			@Inject("value") String mValue;
+			@Inject(name = "value") String mValue;
 		}
 	}
 
 
 	class InjectClassInnerInstanceSample
 	{
-		@Inject("value") String mValue;
+		@Inject(name = "value") String mValue;
 		@Inject InnerScopeSample mInstance;
+
 
 		class InnerScopeSample
 		{
-			@Inject("value") String mValue;
+			@Inject(name = "value") String mValue;
 		}
 	}
 
@@ -457,6 +507,7 @@ public class InjectNGTest
 	{
 		String mName;
 		String mPhone;
+
 
 		@Inject
 		void callMe(@Named("name") String aName, @Named("phone") String aPhone)
@@ -494,11 +545,12 @@ public class InjectNGTest
 
 class InjectClassStaticInnerInstanceSample
 {
-	@Inject("value") String mValue;
+	@Inject(name = "value") String mValue;
 	@Inject InnerScopeSample mInstance;
+
 
 	static class InnerScopeSample
 	{
-		@Inject("value") String mValue;
+		@Inject(name = "value") String mValue;
 	}
 }
