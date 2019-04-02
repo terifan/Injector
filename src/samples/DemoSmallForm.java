@@ -29,8 +29,11 @@ public class DemoSmallForm
 			// when developing & testing
 			injector.bind(UserService.class).toInstance(new MockUserService(new User("dave", "asasasasas asasasasas"), new User("steve", "ghghghghgh ghghghgh ghghghgh")));
 
+			injector.bind(Color.class).named("background").toInstance(Color.RED);
+			injector.bind(Color.class).named("foreground").toInstance(Color.BLUE);
+
 			// replace style
-			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
+//			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
 
 			UserPanel panel = injector.getInstance(UserPanel.class);
 
@@ -50,15 +53,12 @@ public class DemoSmallForm
 
 	static class Style
 	{
-		Color mText;
-		Color mBackground;
-
+		@Inject(name = "foreground") Color mText;
+		@Inject(name = "background") Color mBackground;
 
 		public Style()
 		{
-			this(Color.BLACK, Color.WHITE);
 		}
-
 
 		public Style(Color aText, Color aBackground)
 		{
