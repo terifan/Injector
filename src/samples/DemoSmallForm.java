@@ -10,6 +10,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import org.terifan.injector.Inject;
 import org.terifan.injector.Injector;
+import org.terifan.injector.Named;
 import org.terifan.injector.PostConstruct;
 
 
@@ -22,6 +23,22 @@ public class DemoSmallForm
 			Injector injector = new Injector();
 
 			injector.setLog(System.out);
+/*
+
+Injecting [MockUserService] instance into [UserPanel] instance field [mUserService]
+Injecting [Color] instance named [foreground] into [Style] instance field [mText]
+Injecting [Color] instance named [background] into [Style] instance field [mBackground]
+Injecting [Style] instance into [UserPanel] instance field [mStyle]
+Invoking PostConstruct method [buildForm] in instance of [UserPanel]
+
+UserPanel.mUserService = new MockUserService {}
+UserPanel.mStyle = new Style {
+	mText => (Color)"foreground"
+	mBackground -> (Color)"background"
+}
+UserPanel.buildForm()
+
+*/
 
 			// normal running
 //			injector.bind(UserService.class).asSingleton();
@@ -30,7 +47,7 @@ public class DemoSmallForm
 			injector.bind(UserService.class).toInstance(new MockUserService(new User("dave", "asasasasas asasasasas"), new User("steve", "ghghghghgh ghghghgh ghghghgh")));
 
 			injector.bind(Color.class).named("background").toInstance(Color.RED);
-			injector.bind(Color.class).named("foreground").toInstance(Color.BLUE);
+			injector.bind(Color.class).named("foreground").toProvider(()->Color.BLUE);
 
 			// replace style
 //			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
@@ -53,8 +70,8 @@ public class DemoSmallForm
 
 	static class Style
 	{
-		@Inject(name = "foreground") Color mText;
-		@Inject(name = "background") Color mBackground;
+		@Inject @Named("foreground") Color mText;
+		@Inject @Named("background") Color mBackground;
 
 		public Style()
 		{

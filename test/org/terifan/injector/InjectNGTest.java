@@ -332,6 +332,17 @@ public class InjectNGTest
 	}
 
 
+	@Test
+	public void testToString()
+	{
+		Injector injector = new Injector();
+
+		injector.bind(Fruit.class);
+
+		assertNotNull(injector.toString());
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -382,7 +393,7 @@ public class InjectNGTest
 
 	static class FruitProperty
 	{
-		@Inject(name = "value", optional = true) String mValue;
+		@Inject(optional = true) @Named("value") String mValue;
 	}
 
 
@@ -406,7 +417,7 @@ public class InjectNGTest
 
 	static class NamedSample
 	{
-		@Inject(name = "a") String a;
+		@Inject @Named("a") String a;
 		@Inject @Named("b") String b;
 		String c;
 		String d;
@@ -417,7 +428,7 @@ public class InjectNGTest
 			this.c = c;
 		}
 
-		@Inject(name = "d")
+		@Inject @Named("d")
 		void method2(String d)
 		{
 			this.d = d;
@@ -439,13 +450,13 @@ public class InjectNGTest
 
 	static class OptionalNamedSample
 	{
-		@Inject(name = "value", optional = true) String mValue;
+		@Inject(optional = true) @Named("value") String mValue;
 	}
 
 
 	static class MandatoryNamedSample
 	{
-		@Inject(name = "value") String mValue;
+		@Inject @Named("value") String mValue;
 	}
 
 
@@ -479,26 +490,26 @@ public class InjectNGTest
 
 	static class InjectStaticClassInnerInstanceSample
 	{
-		@Inject(name = "value") String mValue;
+		@Inject @Named("value") String mValue;
 		@Inject InnerScopeSample mInstance;
 
 
 		class InnerScopeSample
 		{
-			@Inject(name = "value") String mValue;
+			@Inject @Named("value") String mValue;
 		}
 	}
 
 
 	class InjectClassInnerInstanceSample
 	{
-		@Inject(name = "value") String mValue;
+		@Inject @Named("value") String mValue;
 		@Inject InnerScopeSample mInstance;
 
 
 		class InnerScopeSample
 		{
-			@Inject(name = "value") String mValue;
+			@Inject @Named("value") String mValue;
 		}
 	}
 
@@ -545,12 +556,12 @@ public class InjectNGTest
 
 class InjectClassStaticInnerInstanceSample
 {
-	@Inject(name = "value") String mValue;
+	@Inject @Named("value") String mValue;
 	@Inject InnerScopeSample mInstance;
 
 
 	static class InnerScopeSample
 	{
-		@Inject(name = "value") String mValue;
+		@Inject @Named("value") String mValue;
 	}
 }

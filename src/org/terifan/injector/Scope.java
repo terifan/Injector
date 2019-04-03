@@ -3,7 +3,7 @@ package org.terifan.injector;
 
 class Scope
 {
-	private String mName;
+	private String mNamed;
 	private Class mType;
 	private boolean mOptional;
 
@@ -15,21 +15,21 @@ class Scope
 
 	public Scope(String aName, Class aType, boolean aOptional)
 	{
-		setName(aName);
+		setNamed(aName);
 		mType = aType;
 		mOptional = aOptional;
 	}
 
 
-	public String getName()
+	public String getNamed()
 	{
-		return mName;
+		return mNamed;
 	}
 
 
-	public void setName(String aName)
+	public void setNamed(String aNamed)
 	{
-		mName = aName == null || aName.isEmpty() ? null : aName;
+		mNamed = aNamed == null || aNamed.isEmpty() ? null : aNamed;
 	}
 
 
@@ -60,6 +60,6 @@ class Scope
 	@Override
 	public String toString()
 	{
-		return "{" + "mName=" + mName + ", mType=" + mType + ", mOptional=" + mOptional + '}';
+		return "{" + "mNamed=" + mNamed + ", mType=" + mType + ", mOptional=" + mOptional + '}';
 	}
 }

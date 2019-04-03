@@ -3,13 +3,13 @@ package org.terifan.injector;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 
 public class Injector
@@ -49,9 +49,9 @@ public class Injector
 	}
 
 
-	public Binding bind(Class aType)
+	public synchronized Binding bind(Class aType)
 	{
-		Binding binding = new Binding(this, new Context(), aType, new Scope());
+		Binding binding = new Binding(this, aType);
 
 		mBindings.computeIfAbsent(aType, e -> new ArrayList<>()).add(binding);
 
@@ -61,11 +61,11 @@ public class Injector
 
 	public <T> T getInstance(Class<T> aType)
 	{
-		return getInstance(new Context(), aType, new Scope());
+		return getInstance(new Context(), aType, null, null, false);
 	}
 
 
-	<T> T getInstance(Context aContext, Class<T> aType, Scope aScope)
+	<T> T getInstance(Context aContext, Class<T> aType, String aNamed, Class aEnclosingType, boolean aOptional)
 	{
 		ArrayList<Binding> list = mBindings.get(aType);
 
@@ -73,28 +73,26 @@ public class Injector
 		{
 			for (Binding binding : list)
 			{
-				Scope bindingScope = binding.getScope();
-
-				if ((bindingScope.getType() == null || bindingScope.getType() == aScope.getType()) && Objects.equals(aScope.getName(), bindingScope.getName()))
+				if (binding.matches(aNamed, aEnclosingType))
 				{
 					return (T)binding.getInstance(aContext);
 				}
 			}
 		}
 
-		if (!aScope.isOptional() && aScope.getName() != null)
+		if (!aOptional && (aNamed != null && !aNamed.isEmpty()))
 		{
-			throw new InjectionException("Named type not bound: " + aType + ", " + aScope);
+			throw new InjectionException("Named type not bound: " + aType + ", " + aEnclosingType + ", " + aNamed + ", " + aOptional);
 		}
 
-		if (aScope.isOptional() || aScope.getName() != null)
+		if (aOptional || (aNamed != null && !aNamed.isEmpty()))
 		{
 			return null;
 		}
 
 		if (mStrict)
 		{
-			throw new InjectionException("Type not bound: " + aType + ", " + aScope);
+			throw new InjectionException("Type not bound: " + aType + ", " + aEnclosingType + ", " + aNamed + ", " + aOptional);
 		}
 
 		return createInstance(aContext, aType);
@@ -163,9 +161,9 @@ public class Injector
 
 		for (Constructor constructor : aType.getConstructors())
 		{
-			Inject annotation = (Inject)constructor.getAnnotation(Inject.class);
+			Inject injectAnnotation = (Inject)constructor.getAnnotation(Inject.class);
 
-			if (annotation != null)
+			if (injectAnnotation != null)
 			{
 				if (mLog != null)
 				{
@@ -183,7 +181,9 @@ public class Injector
 
 				try
 				{
-					instance = (T)constructor.newInstance(createMappedValues(aContext, aType, annotation, constructor.getParameterTypes(), constructor.getParameterAnnotations()));
+					Object[] mappedValues = createMappedValues(aContext, aType, constructor);
+
+					instance = (T)constructor.newInstance(mappedValues);
 				}
 				catch (Exception | Error e)
 				{
@@ -232,26 +232,30 @@ public class Injector
 	}
 
 
-	Object[] createMappedValues(Context aContext, Class aScopeType, Inject aInjectAnnotation, Class[] aParamTypes, Annotation[][] aAnnotations)
+	Object[] createMappedValues(Context aContext, Class aEnclosingType, Executable aExecutable)
 	{
-		Object[] values = new Object[aParamTypes.length];
+		Named namedAnnotation = aExecutable.getAnnotation(Named.class);
+		Class<?>[] paramTypes = aExecutable.getParameterTypes();
+		Annotation[][] annotations = aExecutable.getParameterAnnotations();
 
-		for (int i = 0; i < aParamTypes.length; i++)
+		Object[] values = new Object[paramTypes.length];
+
+		for (int i = 0; i < paramTypes.length; i++)
 		{
-			Class paramType = aParamTypes[i];
+			Class paramType = paramTypes[i];
 
-			String scopeName = aInjectAnnotation.name();
-			boolean optional = aInjectAnnotation.optional();
+			String named = namedAnnotation == null ? null : namedAnnotation.value();
+			boolean optional = aExecutable.getAnnotation(Inject.class).optional();
 
-			for (Annotation annotation : aAnnotations[i])
+			for (Annotation annotation : annotations[i])
 			{
 				if (annotation instanceof Named)
 				{
-					scopeName = ((Named)annotation).value();
+					named = ((Named)annotation).value();
 				}
 			}
 
-			values[i] = getInstance(aContext, paramType, new Scope(scopeName, aScopeType, optional));
+			values[i] = getInstance(aContext, paramType, named, aEnclosingType, optional);
 		}
 
 		return values;
@@ -269,14 +273,7 @@ public class Injector
 			sb.append("\t\t" + entry.getKey() + "\n");
 			for (Binding b : entry.getValue())
 			{
-				if (b.getScope().getType() == null && b.getScope().getName() == null)
-				{
-					sb.append("\t\t\t" + b.getToType() + "\n");
-				}
-				else
-				{
-					sb.append("\t\t\t" + b.getToType() + " in scope " + b.getScope() + "\n");
-				}
+				sb.append("\t\t\t" + b.describe() + "\n");
 			}
 		}
 		sb.append("\t},\n");
@@ -287,7 +284,7 @@ public class Injector
 	private final Visitor mPostConstructVisitor = new Visitor()
 	{
 		@Override
-		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws Exception
+		public void visitMethod(Context aContext, Object aInstance, Class aEnclosingType, Method aMethod) throws Exception
 		{
 			PostConstruct annotation = aMethod.getAnnotation(PostConstruct.class);
 
@@ -295,7 +292,7 @@ public class Injector
 			{
 				if (mLog != null)
 				{
-					mLog.printf("Invoking PostConstruct method [%s] in instance of [%s]%n", aMethod.getName(), aType.getSimpleName());
+					mLog.printf("Invoking PostConstruct method [%s] in instance of [%s]%n", aMethod.getName(), aEnclosingType.getSimpleName());
 				}
 
 				aMethod.setAccessible(true);
@@ -307,27 +304,26 @@ public class Injector
 	private final Visitor mInjectVisitor = new Visitor()
 	{
 		@Override
-		public void visitField(Context aContext, Object aInstance, Class aType, Field aField) throws IllegalAccessException, SecurityException
+		public void visitField(Context aContext, Object aInstance, Class aEnclosingType, Field aField) throws IllegalAccessException, SecurityException
 		{
 			Inject injectAnnotation = aField.getAnnotation(Inject.class);
 
 			if (injectAnnotation != null)
 			{
 				Named namedAnnotation = aField.getAnnotation(Named.class);
+				String named = namedAnnotation == null ? "" : namedAnnotation.value();
 
-				String name = namedAnnotation != null ? namedAnnotation.value() : injectAnnotation.name();
-
-				Object fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), new Scope(name, aType, injectAnnotation.optional()));
+				Object fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), named, aEnclosingType, injectAnnotation.optional());
 
 				if (mLog != null)
 				{
-					if (name.isEmpty())
+					if (named.isEmpty())
 					{
 						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
 					}
 					else
 					{
-						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), name, aInstance.getClass().getSimpleName(), aField.getName());
+						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), named, aInstance.getClass().getSimpleName(), aField.getName());
 					}
 				}
 
@@ -338,14 +334,16 @@ public class Injector
 
 
 		@Override
-		public void visitMethod(Context aContext, Object aInstance, Class aType, Method aMethod) throws IllegalAccessException, InvocationTargetException
+		public void visitMethod(Context aContext, Object aInstance, Class aEnclosingType, Method aMethod) throws IllegalAccessException, InvocationTargetException
 		{
-			Inject annotation = aMethod.getAnnotation(Inject.class);
+			Inject injectAnnotation = aMethod.getAnnotation(Inject.class);
 
-			if (annotation != null)
+			if (injectAnnotation != null)
 			{
+				Object[] mappedValues = createMappedValues(new Context(aContext, aInstance), aEnclosingType, aMethod);
+
 				aMethod.setAccessible(true);
-				aMethod.invoke(aInstance, createMappedValues(new Context(aContext, aInstance), aType, annotation, aMethod.getParameterTypes(), aMethod.getParameterAnnotations()));
+				aMethod.invoke(aInstance, mappedValues);
 			}
 		}
 	};

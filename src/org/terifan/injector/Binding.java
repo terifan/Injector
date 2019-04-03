@@ -1,31 +1,23 @@
 package org.terifan.injector;
 
+import java.util.Objects;
 import java.util.function.Supplier;
-
 
 
 public class Binding
 {
 	private final Injector mInjector;
-	private final Context mContext;
-	private final Scope mScope;
 	private final Class mFromType;
 	private Class mToType;
 	private Provider mProvider;
+	private Class mEnclosingType;
+	private String mNamed;
 
 
-	Binding(Injector aInjector, Context aContext, Class aFromType, Scope aScope)
+	Binding(Injector aInjector, Class aFromType)
 	{
 		mInjector = aInjector;
-		mContext = aContext;
 		mFromType = aFromType;
-		mScope = aScope;
-	}
-
-
-	Scope getScope()
-	{
-		return mScope;
 	}
 
 
@@ -77,14 +69,14 @@ public class Binding
 
 	public Binding named(String aName)
 	{
-		mScope.setName(aName);
+		mNamed = aName;
 		return this;
 	}
 
 
-	public Binding in(Class aScope)
+	public Binding in(Class aEnclosingType)
 	{
-		mScope.setType(aScope);
+		mEnclosingType = aEnclosingType;
 		return this;
 	}
 
@@ -103,6 +95,27 @@ public class Binding
 	@Override
 	public String toString()
 	{
-		return "Binding{" + "mScope=" + mScope + ", mToType=" + mToType + ", mSupplier=" + mProvider + '}';
+		return "Binding{" + "mInjector=" + mInjector + ", mFromType=" + mFromType + ", mToType=" + mToType + ", mProvider=" + mProvider + ", mEnclosingType=" + mEnclosingType + ", mName=" + mNamed + '}';
+	}
+
+
+	boolean matches(String aNamed, Class aEnclosingType)
+	{
+		return (mEnclosingType == null || mEnclosingType == aEnclosingType) && (((aNamed == null || aNamed.isEmpty()) && (mNamed == null || mNamed.isEmpty())) || (aNamed != null && aNamed.equals(mNamed)));
+	}
+
+
+	String describe()
+	{
+		if (mToType == null)
+		{
+			return "<self>";
+		}
+		if (mEnclosingType == null && mNamed == null)
+		{
+			return mToType.toString();
+		}
+
+		return mToType + " in scope " + mEnclosingType + ", " + mNamed;
 	}
 }
