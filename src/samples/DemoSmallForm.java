@@ -50,6 +50,8 @@ UserPanel.buildForm()
 			injector.bind(Color.class).named("background").toInstance(Color.RED);
 			injector.bind(Color.class).named("foreground").toProvider(()->Color.BLUE);
 
+			injector.bindConstant().named("textSize").to(27f);
+
 			// replace style
 //			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
 
@@ -73,6 +75,7 @@ UserPanel.buildForm()
 	{
 		@Inject @Named("foreground") Color mText;
 		@Inject @Named("background") Color mBackground;
+		@Inject @Named("textSize") float mTextSize = 12f;
 
 		public Style()
 		{
@@ -101,6 +104,7 @@ UserPanel.buildForm()
 
 			text.setForeground(mStyle.mText);
 			text.setBackground(mStyle.mBackground);
+			text.setFont(text.getFont().deriveFont(mStyle.mTextSize));
 
 			list.addListSelectionListener(aEvent ->
 			{
@@ -143,12 +147,6 @@ UserPanel.buildForm()
 		public void save(User aUser)
 		{
 			System.out.println("saved user: " + aUser + "=" + aUser.mDescription);
-		}
-
-		@PostConstruct
-		void x()
-		{
-			System.out.println("hello world");
 		}
 	}
 

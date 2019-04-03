@@ -50,9 +50,9 @@ public class Injector
 	}
 
 
-	public synchronized Binding bind(Class aType)
+	public synchronized ProviderBinding bind(Class aType)
 	{
-		Binding binding = new Binding(this, aType);
+		ProviderBinding binding = new ProviderBinding(this, aType);
 
 		mBindings.computeIfAbsent(aType, e -> new ArrayList<>()).add(binding);
 
@@ -60,13 +60,23 @@ public class Injector
 	}
 
 
-	public <T> T getInstance(Class<T> aType)
+	public synchronized ConstantBinding bindConstant()
 	{
-		return getInstance(new Context(), aType, null, null, false);
+		ConstantBinding binding = new ConstantBinding(this);
+
+		mBindings.computeIfAbsent(Injector.class, e -> new ArrayList<>()).add(binding);
+
+		return binding;
 	}
 
 
-	<T> T getInstance(Context aContext, Class<T> aType, String aNamed, Class aEnclosingType, boolean aOptional)
+	public <T> T getInstance(Class<T> aType)
+	{
+		return (T)getInstance(new Context(), aType, null, null, false).getInstance(new Context());
+	}
+
+
+	<T> Binding getInstance(Context aContext, Class<T> aType, String aNamed, Class aEnclosingType, boolean aOptional)
 	{
 		ArrayList<Binding> list = mBindings.get(aType);
 
@@ -76,7 +86,20 @@ public class Injector
 			{
 				if (binding.matches(aNamed, aEnclosingType))
 				{
-					return (T)binding.getInstance(aContext);
+					return binding;
+				}
+			}
+		}
+
+		list = mBindings.get(Injector.class);
+
+		if (list != null)
+		{
+			for (Binding binding : list)
+			{
+				if (binding.matches(aNamed, aEnclosingType))
+				{
+					return binding;
 				}
 			}
 		}
@@ -96,7 +119,7 @@ public class Injector
 			throw new InjectionException("Type not bound: " + aType + ", " + aEnclosingType + ", " + aNamed + ", " + aOptional);
 		}
 
-		return createInstance(aContext, aType);
+		return new ProviderBinding(this, aType);
 	}
 
 
@@ -261,7 +284,7 @@ public class Injector
 				}
 			}
 
-			values[i] = getInstance(aContext, paramType, named, aEnclosingType, optional);
+			values[i] = getInstance(aContext, paramType, named, aEnclosingType, optional).getInstance(aContext);
 		}
 
 		return values;
@@ -321,29 +344,39 @@ public class Injector
 
 				Object fieldValue;
 
+				aField.setAccessible(true);
+
 				if (aField.getType() == Provider.class)
 				{
 					fieldValue = new Provider(Injector.this, (Class)((ParameterizedType)aField.getGenericType()).getActualTypeArguments()[0]);
+					aField.set(aInstance, fieldValue);
 				}
 				else
 				{
-					fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), named, aEnclosingType, injectAnnotation.optional());
+					Binding binding = getInstance(new Context(aContext, aInstance), aField.getType(), named, aEnclosingType, injectAnnotation.optional());
+
+					if (binding instanceof ConstantBinding)
+					{
+						((ConstantBinding)binding).populate(aContext, aInstance, aField);
+					}
+					else
+					{
+						fieldValue = binding.getInstance(aContext);
+						aField.set(aInstance, fieldValue);
+					}
 				}
 
 				if (mLog != null)
 				{
 					if (named.isEmpty())
 					{
-						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
+						mLog.printf("Injecting [%s] instance into [%s] instance field [%s]%n", aField.get(aInstance) == null ? "null" : aField.get(aInstance).getClass().getSimpleName(), aInstance.getClass().getSimpleName(), aField.getName());
 					}
 					else
 					{
-						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", fieldValue == null ? "null" : fieldValue.getClass().getSimpleName(), named, aInstance.getClass().getSimpleName(), aField.getName());
+						mLog.printf("Injecting [%s] instance named [%s] into [%s] instance field [%s]%n", aField.get(aInstance) == null ? "null" : aField.get(aInstance).getClass().getSimpleName(), named, aInstance.getClass().getSimpleName(), aField.getName());
 					}
 				}
-
-				aField.setAccessible(true);
-				aField.set(aInstance, fieldValue);
 			}
 		}
 
