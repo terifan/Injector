@@ -7,6 +7,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -158,6 +159,11 @@ public class Injector
 	<T> T createInstance(Context aContext, Class<T> aType)
 	{
 		T instance = null;
+
+		if (aType.isInterface())
+		{
+			throw new InjectionException("Cannot constructor instance of interface: " + aType);
+		}
 
 		for (Constructor constructor : aType.getConstructors())
 		{
@@ -313,7 +319,16 @@ public class Injector
 				Named namedAnnotation = aField.getAnnotation(Named.class);
 				String named = namedAnnotation == null ? "" : namedAnnotation.value();
 
-				Object fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), named, aEnclosingType, injectAnnotation.optional());
+				Object fieldValue;
+
+				if (aField.getType() == Provider.class)
+				{
+					fieldValue = new Provider(Injector.this, (Class)((ParameterizedType)aField.getGenericType()).getActualTypeArguments()[0]);
+				}
+				else
+				{
+					fieldValue = getInstance(new Context(aContext, aInstance), aField.getType(), named, aEnclosingType, injectAnnotation.optional());
+				}
 
 				if (mLog != null)
 				{

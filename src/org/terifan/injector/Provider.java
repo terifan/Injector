@@ -1,16 +1,41 @@
 package org.terifan.injector;
 
 
-abstract class Provider<T>
+public class Provider<T>
 {
-	protected final Injector mInjector;
+	private Class<T> mType;
+	private T mInstance;
+	private Injector mInjector;
+	private boolean mSingleton;
 
 
-	Provider(Injector aInjector)
+	Provider(Injector aInjector, Class<T> aType)
 	{
 		mInjector = aInjector;
+		mType = aType;
+		mSingleton = mType.getAnnotation(Singleton.class) != null;
 	}
 
 
-	public abstract T get(Context aContext);
+	public T get()
+	{
+		try
+		{
+			if (mSingleton)
+			{
+				if (mInstance == null)
+				{
+					mInstance = mInjector.getInstance(mType);
+				}
+
+				return mInstance;
+			}
+
+			return mInjector.getInstance(mType);
+		}
+		catch (Exception | Error e)
+		{
+			throw new InjectionException(e);
+		}
+	}
 }

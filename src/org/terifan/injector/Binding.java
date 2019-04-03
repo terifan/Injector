@@ -1,6 +1,5 @@
 package org.terifan.injector;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 
@@ -9,7 +8,7 @@ public class Binding
 	private final Injector mInjector;
 	private final Class mFromType;
 	private Class mToType;
-	private Provider mProvider;
+	private Factory mProvider;
 	private Class mEnclosingType;
 	private String mNamed;
 
@@ -21,27 +20,21 @@ public class Binding
 	}
 
 
-	Class getToType()
-	{
-		return mToType;
-	}
-
-
 	public void asSingleton()
 	{
-		mProvider = new SingeltonProvider(mInjector, mToType != null ? mToType : mFromType);
+		mProvider = new SingeltonFactory(mInjector, mToType != null ? mToType : mFromType);
 	}
 
 
 	public void toInstance(Object aInstance)
 	{
-		mProvider = new SingeltonProvider(mInjector, aInstance);
+		mProvider = new SingeltonFactory(mInjector, aInstance);
 	}
 
 
 	public void toProvider(Supplier aSupplier)
 	{
-		mProvider = new Provider(mInjector)
+		mProvider = new Factory(mInjector)
 		{
 			@Override
 			public Object get(Context aContext)
@@ -56,7 +49,7 @@ public class Binding
 	{
 		if (aToType.getAnnotation(Singleton.class) != null)
 		{
-			mProvider = new SingeltonProvider(mInjector, aToType);
+			mProvider = new SingeltonFactory(mInjector, aToType);
 		}
 		else
 		{
@@ -92,13 +85,6 @@ public class Binding
 	}
 
 
-	@Override
-	public String toString()
-	{
-		return "Binding{" + "mInjector=" + mInjector + ", mFromType=" + mFromType + ", mToType=" + mToType + ", mProvider=" + mProvider + ", mEnclosingType=" + mEnclosingType + ", mName=" + mNamed + '}';
-	}
-
-
 	boolean matches(String aNamed, Class aEnclosingType)
 	{
 		return (mEnclosingType == null || mEnclosingType == aEnclosingType) && (((aNamed == null || aNamed.isEmpty()) && (mNamed == null || mNamed.isEmpty())) || (aNamed != null && aNamed.equals(mNamed)));
@@ -117,5 +103,12 @@ public class Binding
 		}
 
 		return mToType + " in scope " + mEnclosingType + ", " + mNamed;
+	}
+
+
+	@Override
+	public String toString()
+	{
+		return "Binding{" + "mInjector=" + mInjector + ", mFromType=" + mFromType + ", mToType=" + mToType + ", mProvider=" + mProvider + ", mEnclosingType=" + mEnclosingType + ", mName=" + mNamed + '}';
 	}
 }

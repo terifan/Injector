@@ -1,13 +1,13 @@
 package org.terifan.injector;
 
 
-class SingeltonProvider<T> extends Provider<T>
+class SingeltonFactory<T> extends Factory<T>
 {
 	private Class<T> mType;
 	private T mInstance;
 
 
-	public SingeltonProvider(Injector aInjector, Class aType)
+	public SingeltonFactory(Injector aInjector, Class aType)
 	{
 		super(aInjector);
 
@@ -15,7 +15,7 @@ class SingeltonProvider<T> extends Provider<T>
 	}
 
 
-	public SingeltonProvider(Injector aInjector, T aInstance)
+	public SingeltonFactory(Injector aInjector, T aInstance)
 	{
 		super(aInjector);
 

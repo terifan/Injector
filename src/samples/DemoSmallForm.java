@@ -12,6 +12,7 @@ import org.terifan.injector.Inject;
 import org.terifan.injector.Injector;
 import org.terifan.injector.Named;
 import org.terifan.injector.PostConstruct;
+import org.terifan.injector.Provider;
 
 
 public class DemoSmallForm
@@ -87,7 +88,7 @@ UserPanel.buildForm()
 
 	static class UserPanel extends JPanel
 	{
-		@Inject private UserService mUserService;
+		@Inject private Provider<UserService> mUserService;
 		@Inject private Style mStyle;
 		private User mUser;
 
@@ -95,7 +96,7 @@ UserPanel.buildForm()
 		@PostConstruct
 		public void buildForm()
 		{
-			JList<User> list = new JList<>(mUserService.getUsers());
+			JList<User> list = new JList<>(mUserService.get().getUsers());
 			JTextArea text = new JTextArea();
 
 			text.setForeground(mStyle.mText);
@@ -106,7 +107,7 @@ UserPanel.buildForm()
 				if (mUser != null && !mUser.mDescription.equals(text.getText()))
 				{
 					mUser.mDescription = text.getText();
-					mUserService.save(mUser);
+					mUserService.get().save(mUser);
 				}
 
 				mUser = list.getModel().getElementAt(list.getSelectedIndex());
@@ -142,6 +143,12 @@ UserPanel.buildForm()
 		public void save(User aUser)
 		{
 			System.out.println("saved user: " + aUser + "=" + aUser.mDescription);
+		}
+
+		@PostConstruct
+		void x()
+		{
+			System.out.println("hello world");
 		}
 	}
 

@@ -343,6 +343,46 @@ public class InjectNGTest
 	}
 
 
+	@Test
+	public void testProvider()
+	{
+		Injector injector = new Injector();
+
+		ProviderSample instance1 = injector.getInstance(ProviderSample.class);
+		ProviderSample instance2 = injector.getInstance(ProviderSample.class);
+
+		assertNotNull(instance1);
+		assertNotNull(instance1.mProvider);
+		assertNotNull(instance1.mProvider.get());
+
+		assertNotNull(instance2);
+		assertNotNull(instance2.mProvider);
+		assertNotNull(instance2.mProvider.get());
+
+		assertNotSame(instance1.mProvider.get(), instance1.mProvider.get());
+	}
+
+
+	@Test
+	public void testProviderSingleton()
+	{
+		Injector injector = new Injector();
+
+		ProviderSingletonSample instance1 = injector.getInstance(ProviderSingletonSample.class);
+		ProviderSingletonSample instance2 = injector.getInstance(ProviderSingletonSample.class);
+
+		assertNotNull(instance1);
+		assertNotNull(instance1.mProvider);
+		assertNotNull(instance1.mProvider.get());
+
+		assertNotNull(instance2);
+		assertNotNull(instance2.mProvider);
+		assertNotNull(instance2.mProvider.get());
+
+		assertSame(instance1.mProvider.get(), instance1.mProvider.get());
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -537,19 +577,31 @@ public class InjectNGTest
 
 	static class CircularSample1
 	{
-		@Inject CircularSample2 instance;
+		@Inject CircularSample2 mInstance;
 	}
 
 
 	static class CircularSample2
 	{
-		@Inject CircularSample3 instance;
+		@Inject CircularSample3 mInstance;
 	}
 
 
 	static class CircularSample3
 	{
-		@Inject CircularSample1 instance;
+		@Inject CircularSample1 mInstance;
+	}
+
+
+	static class ProviderSample
+	{
+		@Inject Provider<Fruit> mProvider;
+	}
+
+
+	static class ProviderSingletonSample
+	{
+		@Inject Provider<SingletonAnnotationSample> mProvider;
 	}
 }
 
