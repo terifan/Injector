@@ -3,7 +3,6 @@ package org.terifan.injector;
 import java.lang.reflect.Field;
 
 
-
 public abstract class Binding
 {
 	protected final Injector mInjector;
@@ -13,7 +12,7 @@ public abstract class Binding
 
 	public Binding(Injector aInjector)
 	{
-		this.mInjector = aInjector;
+		mInjector = aInjector;
 	}
 
 

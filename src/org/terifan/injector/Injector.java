@@ -15,7 +15,7 @@ import java.util.Map.Entry;
 
 public class Injector
 {
-	private final HashMap<Class, ArrayList<Binding>> mBindings;
+	final HashMap<Class, ArrayList<Binding>> mBindings;
 	private boolean mStrict;
 	private PrintStream mLog;
 
@@ -63,8 +63,6 @@ public class Injector
 	public synchronized ConstantBinding bindConstant()
 	{
 		ConstantBinding binding = new ConstantBinding(this);
-
-		mBindings.computeIfAbsent(ConstantBinding.class, e -> new ArrayList<>()).add(binding);
 
 		return binding;
 	}
@@ -235,6 +233,7 @@ public class Injector
 				{
 					Constructor constructor = aType.getDeclaredConstructor();
 					constructor.setAccessible(true);
+
 					instance = (T)constructor.newInstance();
 				}
 				catch (NoSuchMethodException e)
@@ -245,7 +244,7 @@ public class Injector
 					Constructor constructor = aType.getDeclaredConstructors()[0];
 					constructor.setAccessible(true);
 
-					instance = (T)constructor.newInstance(aContext.mEnclosingInstance);
+					instance = (T)constructor.newInstance(aContext.getEnclosingInstance());
 				}
 			}
 			catch (InjectionException e)

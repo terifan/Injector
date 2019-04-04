@@ -113,6 +113,6 @@ public class ProviderBinding extends Binding
 	@Override
 	public String toString()
 	{
-		return "Binding{" + "mFromType=" + mFromType + ", mToType=" + mToType + ", mEnclosingType=" + mEnclosingType + ", mNamed=" + mNamed + '}';
+		return "ProviderBinding{" + "mFromType=" + mFromType + ", mToType=" + mToType + ", mEnclosingType=" + mEnclosingType + ", mNamed=" + mNamed + '}';
 	}
 }

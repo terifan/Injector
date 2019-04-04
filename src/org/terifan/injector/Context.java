@@ -5,9 +5,9 @@ import java.util.ArrayList;
 
 class Context
 {
-	Context mParent;
-	Class mEnclosingType;
-	Object mEnclosingInstance;
+	private Context mParent;
+	private Class mEnclosingType;
+	private Object mEnclosingInstance;
 
 
 	public Context()
@@ -31,6 +31,12 @@ class Context
 
 			ctx = ctx.mParent;
 		}
+	}
+
+
+	public Object getEnclosingInstance()
+	{
+		return mEnclosingInstance;
 	}
 
 
