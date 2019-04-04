@@ -12,5 +12,5 @@ abstract class Factory<T>
 	}
 
 
-	public abstract T get(Context aContext);
+	abstract T get(Context aContext);
 }

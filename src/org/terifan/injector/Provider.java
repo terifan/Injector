@@ -33,6 +33,10 @@ public class Provider<T>
 
 			return mInjector.getInstance(mType);
 		}
+		catch (InjectionException e)
+		{
+			throw e;
+		}
 		catch (Exception | Error e)
 		{
 			throw new InjectionException(e);

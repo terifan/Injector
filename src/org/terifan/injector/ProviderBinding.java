@@ -16,18 +16,19 @@ public class ProviderBinding extends Binding
 		super(aInjector);
 
 		mFromType = aFromType;
+		mProvider = new SingeltonFactory(mInjector, mFromType, false);
 	}
 
 
 	public void asSingleton()
 	{
-		mProvider = new SingeltonFactory(mInjector, mToType != null ? mToType : mFromType);
+		mProvider = new SingeltonFactory(mInjector, mToType != null ? mToType : mFromType, true);
 	}
 
 
 	public void toInstance(Object aInstance)
 	{
-		mProvider = new SingeltonFactory(mInjector, aInstance);
+		mProvider = new SingeltonFactory(mInjector, aInstance, false);
 	}
 
 
@@ -46,14 +47,8 @@ public class ProviderBinding extends Binding
 
 	public ProviderBinding to(Class aToType)
 	{
-		if (aToType.getAnnotation(Singleton.class) != null)
-		{
-			mProvider = new SingeltonFactory(mInjector, aToType);
-		}
-		else
-		{
-			mToType = aToType;
-		}
+		mToType = aToType;
+		mProvider = new SingeltonFactory(mInjector, aToType, false);
 
 		return this;
 	}
