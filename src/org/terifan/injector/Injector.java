@@ -354,7 +354,7 @@ public class Injector
 
 				if (aField.getType() == Provider.class)
 				{
-					Object fieldValue = new Provider(Injector.this, (Class)((ParameterizedType)aField.getGenericType()).getActualTypeArguments()[0]);
+					Object fieldValue = new Provider<>(Injector.this, (Class)((ParameterizedType)aField.getGenericType()).getActualTypeArguments()[0], false);
 					aField.set(aInstance, fieldValue);
 				}
 				else

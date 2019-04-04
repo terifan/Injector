@@ -8,7 +8,7 @@ public class ProviderBinding extends Binding
 {
 	private final Class mFromType;
 	private Class mToType;
-	private Factory mProvider;
+	private Provider mProvider;
 
 
 	ProviderBinding(Injector aInjector, Class aFromType)
@@ -16,25 +16,26 @@ public class ProviderBinding extends Binding
 		super(aInjector);
 
 		mFromType = aFromType;
-		mProvider = new SingeltonFactory(mInjector, mFromType, false);
+		mToType = aFromType;
+		mProvider = new Provider(mInjector, mFromType, false);
 	}
 
 
 	public void asSingleton()
 	{
-		mProvider = new SingeltonFactory(mInjector, mToType != null ? mToType : mFromType, true);
+		mProvider = new Provider(mInjector, mToType, true);
 	}
 
 
 	public void toInstance(Object aInstance)
 	{
-		mProvider = new SingeltonFactory(mInjector, aInstance, false);
+		mProvider = new Provider(mInjector, aInstance, false);
 	}
 
 
 	public void toProvider(Supplier aSupplier)
 	{
-		mProvider = new Factory(mInjector)
+		mProvider = new Provider(mInjector, null, true)
 		{
 			@Override
 			public Object get(Context aContext)
@@ -48,7 +49,7 @@ public class ProviderBinding extends Binding
 	public ProviderBinding to(Class aToType)
 	{
 		mToType = aToType;
-		mProvider = new SingeltonFactory(mInjector, aToType, false);
+		mProvider = new Provider(mInjector, aToType, false);
 
 		return this;
 	}
@@ -89,20 +90,14 @@ public class ProviderBinding extends Binding
 	@Override
 	Object getInstance(Context aContext)
 	{
-		if (mProvider != null)
-		{
-			return mProvider.get(aContext);
-		}
-
-		return mInjector.createInstance(aContext, mToType != null ? mToType : mFromType);
+		return mProvider.get(aContext);
 	}
-
 
 
 	@Override
 	String describe()
 	{
-		if (mToType == null)
+		if (mFromType == mToType)
 		{
 			return "<self>";
 		}
@@ -118,6 +113,6 @@ public class ProviderBinding extends Binding
 	@Override
 	public String toString()
 	{
-		return "Binding{" + "mFromType=" + mFromType + ", mToType=" + mToType + ", mProvider=" + mProvider + ", mEnclosingType=" + mEnclosingType + ", mName=" + mNamed + '}';
+		return "Binding{" + "mFromType=" + mFromType + ", mToType=" + mToType + ", mEnclosingType=" + mEnclosingType + ", mNamed=" + mNamed + '}';
 	}
 }
