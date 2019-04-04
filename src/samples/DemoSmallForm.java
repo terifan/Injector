@@ -24,8 +24,8 @@ public class DemoSmallForm
 			Injector injector = new Injector();
 
 			injector.setLog(System.out);
-/*
 
+/*
 Injecting [MockUserService] instance into [UserPanel] instance field [mUserService]
 Injecting [Color] instance named [foreground] into [Style] instance field [mText]
 Injecting [Color] instance named [background] into [Style] instance field [mBackground]
@@ -38,7 +38,6 @@ UserPanel.mStyle = new Style {
 	mBackground -> (Color)"background"
 }
 UserPanel.buildForm()
-
 */
 
 			// normal running
@@ -100,8 +99,8 @@ UserPanel.buildForm()
 		public void buildForm()
 		{
 			JList<User> list = new JList<>(mUserService.get().getUsers());
-			JTextArea text = new JTextArea();
 
+			JTextArea text = new JTextArea();
 			text.setForeground(mStyle.mText);
 			text.setBackground(mStyle.mBackground);
 			text.setFont(text.getFont().deriveFont(mStyle.mTextSize));

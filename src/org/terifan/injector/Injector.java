@@ -64,7 +64,7 @@ public class Injector
 	{
 		ConstantBinding binding = new ConstantBinding(this);
 
-		mBindings.computeIfAbsent(Injector.class, e -> new ArrayList<>()).add(binding);
+		mBindings.computeIfAbsent(ConstantBinding.class, e -> new ArrayList<>()).add(binding);
 
 		return binding;
 	}
@@ -72,11 +72,11 @@ public class Injector
 
 	public <T> T getInstance(Class<T> aType)
 	{
-		return (T)getInstance(new Context(), aType, null, null, false).getInstance(new Context());
+		return (T)findBinding(aType, null, null, false).getInstance(new Context());
 	}
 
 
-	<T> Binding getInstance(Context aContext, Class<T> aType, String aNamed, Class aEnclosingType, boolean aOptional)
+	private <T> Binding findBinding(Class<T> aType, String aNamed, Class aEnclosingType, boolean aOptional)
 	{
 		ArrayList<Binding> list = mBindings.get(aType);
 
@@ -91,7 +91,7 @@ public class Injector
 			}
 		}
 
-		list = mBindings.get(Injector.class);
+		list = mBindings.get(ConstantBinding.class);
 
 		if (list != null)
 		{
@@ -168,7 +168,7 @@ public class Injector
 				type = type.getSuperclass();
 			}
 		}
-		catch (RuntimeException e)
+		catch (InjectionException e)
 		{
 			throw e;
 		}
@@ -214,6 +214,10 @@ public class Injector
 
 					instance = (T)constructor.newInstance(mappedValues);
 				}
+				catch (InjectionException e)
+				{
+					throw e;
+				}
 				catch (Exception | Error e)
 				{
 					throw new InjectionException(e);
@@ -243,6 +247,10 @@ public class Injector
 
 					instance = (T)constructor.newInstance(aContext.mEnclosingInstance);
 				}
+			}
+			catch (InjectionException e)
+			{
+				throw e;
 			}
 			catch (Exception | Error e)
 			{
@@ -284,7 +292,7 @@ public class Injector
 				}
 			}
 
-			values[i] = getInstance(aContext, paramType, named, aEnclosingType, optional).getInstance(aContext);
+			values[i] = findBinding(paramType, named, aEnclosingType, optional).getInstance(aContext);
 		}
 
 		return values;
@@ -342,27 +350,24 @@ public class Injector
 				Named namedAnnotation = aField.getAnnotation(Named.class);
 				String named = namedAnnotation == null ? "" : namedAnnotation.value();
 
-				Object fieldValue;
-
 				aField.setAccessible(true);
 
 				if (aField.getType() == Provider.class)
 				{
-					fieldValue = new Provider(Injector.this, (Class)((ParameterizedType)aField.getGenericType()).getActualTypeArguments()[0]);
+					Object fieldValue = new Provider(Injector.this, (Class)((ParameterizedType)aField.getGenericType()).getActualTypeArguments()[0]);
 					aField.set(aInstance, fieldValue);
 				}
 				else
 				{
-					Binding binding = getInstance(new Context(aContext, aInstance), aField.getType(), named, aEnclosingType, injectAnnotation.optional());
+					Binding binding = findBinding(aField.getType(), named, aEnclosingType, injectAnnotation.optional());
 
-					if (binding instanceof ConstantBinding)
+					if (binding != null)
 					{
-						((ConstantBinding)binding).populate(aContext, aInstance, aField);
+						binding.populate(new Context(aContext, aInstance), aInstance, aField);
 					}
 					else
 					{
-						fieldValue = binding.getInstance(aContext);
-						aField.set(aInstance, fieldValue);
+						aField.set(aInstance, null);
 					}
 				}
 

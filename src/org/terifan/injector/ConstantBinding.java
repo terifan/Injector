@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 
 public class ConstantBinding extends Binding
 {
-	private float mValue;
+	private Object mValue;
 
 
 	ConstantBinding(Injector aInjector)
@@ -14,7 +14,55 @@ public class ConstantBinding extends Binding
 	}
 
 
+	public void to(boolean aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(byte aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(short aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(char aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(int aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(long aValue)
+	{
+		mValue = aValue;
+	}
+
+
 	public void to(float aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(double aValue)
+	{
+		mValue = aValue;
+	}
+
+
+	public void to(String aValue)
 	{
 		mValue = aValue;
 	}
@@ -41,11 +89,12 @@ public class ConstantBinding extends Binding
 	}
 
 
+	@Override
 	void populate(Context aContext, Object aInstance, Field aField)
 	{
 		try
 		{
-			aField.setFloat(aInstance, mValue);
+			aField.set(aInstance, mValue);
 		}
 		catch (Exception | Error e)
 		{

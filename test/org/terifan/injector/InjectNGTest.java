@@ -383,6 +383,25 @@ public class InjectNGTest
 	}
 
 
+	@Test
+	public void testConstantProvider()
+	{
+		Injector injector = new Injector();
+		injector.bindConstant().named("x").to(1);
+		injector.bindConstant().named("y").to(2.0);
+		injector.bindConstant().named("z").in(ConstantProviderSample.class).to(3);
+		injector.bindConstant().named("z").in(ConstantProviderSample.InnerClass.class).to(-3);
+
+		ConstantProviderSample instance = injector.getInstance(ConstantProviderSample.class);
+
+		assertNotNull(instance);
+		assertEquals(instance.mX, 1);
+		assertEquals(instance.mY, 2.0);
+		assertEquals(instance.mZ, 3);
+		assertEquals(instance.mInnerClass.mZ, -3);
+	}
+
+
 	static class Fruit
 	{
 		@Inject FruitProperty mFruitProperty1;
@@ -602,6 +621,20 @@ public class InjectNGTest
 	static class ProviderSingletonSample
 	{
 		@Inject Provider<SingletonAnnotationSample> mProvider;
+	}
+
+
+	static class ConstantProviderSample
+	{
+		@Inject @Named("x") int mX;
+		@Inject @Named("y") double mY;
+		@Inject @Named("z") int mZ;
+		@Inject InnerClass mInnerClass;
+
+		class InnerClass
+		{
+			@Inject @Named("z") int mZ;
+		}
 	}
 }
 

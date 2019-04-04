@@ -1,5 +1,6 @@
 package org.terifan.injector;
 
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 
@@ -69,6 +70,24 @@ public class ProviderBinding extends Binding
 	{
 		mEnclosingType = aEnclosingType;
 		return this;
+	}
+
+
+	@Override
+	void populate(Context aContext, Object aInstance, Field aField)
+	{
+		try
+		{
+			aField.set(aInstance, getInstance(aContext));
+		}
+		catch (InjectionException e)
+		{
+			throw e;
+		}
+		catch (Exception | Error e)
+		{
+			throw new InjectionException(e);
+		}
 	}
 
 
