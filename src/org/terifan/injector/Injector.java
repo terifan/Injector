@@ -104,7 +104,7 @@ public class Injector
 
 		if (!aOptional && (aNamed != null && !aNamed.isEmpty()))
 		{
-			throw new InjectionException("Named type not bound: " + aType + ", " + aEnclosingType + ", " + aNamed + ", " + aOptional);
+			throw new InjectionException("Type not bound: " + aType + (aNamed == null || aNamed.isEmpty() ? "" : " '" + aNamed + "'") + (aEnclosingType == null ? "" : " in " + aEnclosingType));
 		}
 
 		if (aOptional || (aNamed != null && !aNamed.isEmpty()))
@@ -114,7 +114,7 @@ public class Injector
 
 		if (mStrict)
 		{
-			throw new InjectionException("Type not bound: " + aType + ", " + aEnclosingType + ", " + aNamed + ", " + aOptional);
+			throw new InjectionException("Type not bound: " + aType + (aNamed == null || aNamed.isEmpty() ? "" : " '" + aNamed + "'") + (aEnclosingType == null ? "" : " in " + aEnclosingType));
 		}
 
 		return new ProviderBinding(this, aType);

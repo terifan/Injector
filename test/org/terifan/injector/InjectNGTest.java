@@ -1,6 +1,9 @@
 package org.terifan.injector;
 
 import java.awt.Color;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
 
@@ -176,7 +179,7 @@ public class InjectNGTest
 	}
 
 
-	@Test(expectedExceptions = InjectionException.class, expectedExceptionsMessageRegExp = "Named type not bound.*")
+	@Test(expectedExceptions = InjectionException.class, expectedExceptionsMessageRegExp = "Type not bound.*")
 	public void testMandatoryNamed()
 	{
 		Injector injector = new Injector();
@@ -399,6 +402,53 @@ public class InjectNGTest
 		assertEquals(instance.mY, 2.0);
 		assertEquals(instance.mZ, 3);
 		assertEquals(instance.mInnerClass.mZ, -3);
+	}
+
+
+	@Test
+	public void testMethodArgumentProvider()
+	{
+		Injector injector = new Injector();
+
+		MethodArgumentProviderSample instance = injector.getInstance(MethodArgumentProviderSample.class);
+
+		assertNotNull(instance);
+		assertTrue(instance.mStrings instanceof Provider);
+		assertTrue(instance.mStrings.get() instanceof String);
+	}
+
+
+	@Test
+	public void testMethodArgumentCollection()
+	{
+		List<String> listStrings = Arrays.asList("test");
+		List<Date> listDates = Arrays.asList(new Date());
+
+		Injector injector = new Injector();
+
+		injector.bind(StringListProvider.class);
+
+//		injector.bind(new TypeLiteral<List<String>>(){}).toProvider(()->Arrays.asList("test"));
+
+		injector.bind(List.class).toInstance(listStrings);
+		injector.bind(List.class).toInstance(listDates);
+
+		MethodArgumentCollectionSample instance = injector.getInstance(MethodArgumentCollectionSample.class);
+
+		assertNotNull(instance);
+		assertTrue(instance.mStrings instanceof List);
+		assertSame(instance.mStrings, listStrings);
+		assertTrue(instance.mDates instanceof List);
+		assertSame(instance.mDates, listDates);
+	}
+
+	static class StringListProvider
+	{
+		//@Provides
+		public List<String> get()
+		{
+			return null;
+		}
 	}
 
 
@@ -634,6 +684,32 @@ public class InjectNGTest
 		class InnerClass
 		{
 			@Inject @Named("z") int mZ;
+		}
+	}
+
+
+	static class MethodArgumentProviderSample
+	{
+		Provider<String> mStrings;
+
+		@Inject
+		void x(Provider<String> aStrings)
+		{
+			mStrings = aStrings;
+		}
+	}
+
+
+	static class MethodArgumentCollectionSample
+	{
+		List<String> mStrings;
+		List<Date> mDates;
+
+		@Inject
+		void x(List<String> aStrings, List<Date> aDates)
+		{
+			mStrings = aStrings;
+			mDates = aDates;
 		}
 	}
 }

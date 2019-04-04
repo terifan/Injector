@@ -36,6 +36,7 @@ public class AllPaths
 			injector.bind(Date.class).named("birthday").in(Date.class).to(Date.class).asSingleton();
 			injector.bind(Date.class).named("birthday").in(Date.class).toInstance(new Date());
 			injector.bind(Date.class).named("birthday").in(Date.class).toProvider(() -> new Date());
+			injector.bindConstant().named("number").in(Date.class).to(7);
 
 			injector.getInstance(Date.class);
 		}

@@ -50,7 +50,7 @@ UserPanel.buildForm()
 			injector.bind(Color.class).named("foreground").toProvider(()->Color.BLUE);
 
 			injector.bindConstant().named("textSize").to(27f);
-			injector.bindConstant().named("textSize").in(String.class).to(27f);
+//			injector.bindConstant().named("textSize").in(Style.class).to(27f);
 
 			// replace style
 //			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
