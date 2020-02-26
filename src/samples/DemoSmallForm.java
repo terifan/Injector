@@ -25,32 +25,17 @@ public class DemoSmallForm
 
 			injector.setLog(System.out);
 
-/*
-Injecting [MockUserService] instance into [UserPanel] instance field [mUserService]
-Injecting [Color] instance named [foreground] into [Style] instance field [mText]
-Injecting [Color] instance named [background] into [Style] instance field [mBackground]
-Injecting [Style] instance into [UserPanel] instance field [mStyle]
-Invoking PostConstruct method [buildForm] in instance of [UserPanel]
-
-UserPanel.mUserService = new MockUserService {}
-UserPanel.mStyle = new Style {
-	mText => (Color)"foreground"
-	mBackground -> (Color)"background"
-}
-UserPanel.buildForm()
-*/
-
 			// normal running
 //			injector.bind(UserService.class).asSingleton();
 
 			// when developing & testing
-			injector.bind(UserService.class).toInstance(new MockUserService(new User("dave", "asasasasas asasasasas"), new User("steve", "ghghghghgh ghghghgh ghghghgh")));
+			injector.bind(UserService.class).toInstance(new MockUserService(new User("dave", "asasa sasas asasa sasas"), new User("steve", "ghghg hghgh ghghg hgh ghghg hgh")));
 
 			injector.bind(Color.class).named("background").toInstance(Color.RED);
 			injector.bind(Color.class).named("foreground").toProvider(()->Color.BLUE);
 
-			injector.bindConstant().named("textSize").to(27f);
-//			injector.bindConstant().named("textSize").in(Style.class).to(27f);
+			injector.bindConstant().named("textSize").to(24f);
+			injector.bindConstant().named("textSize").in(Style.class).to(96f);
 
 			// replace style
 //			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
@@ -75,7 +60,7 @@ UserPanel.buildForm()
 	{
 		@Inject @Named("foreground") Color mText;
 		@Inject @Named("background") Color mBackground;
-		@Inject @Named("textSize") float mTextSize = 12f;
+		@Inject(optional = true) @Named("textSize") float mTextSize = 12f;
 
 		public Style()
 		{
@@ -93,6 +78,7 @@ UserPanel.buildForm()
 	{
 		@Inject private Provider<UserService> mUserService;
 		@Inject private Style mStyle;
+		@Inject(optional = true) @Named("textSize") private float mTextSize = 12f;
 		private User mUser;
 
 
@@ -100,11 +86,13 @@ UserPanel.buildForm()
 		public void buildForm()
 		{
 			JList<User> list = new JList<>(mUserService.get().getUsers());
+			list.setFont(list.getFont().deriveFont(mTextSize));
 
 			JTextArea text = new JTextArea();
 			text.setForeground(mStyle.mText);
 			text.setBackground(mStyle.mBackground);
 			text.setFont(text.getFont().deriveFont(mStyle.mTextSize));
+			text.setLineWrap(true);
 
 			list.addListSelectionListener(aEvent ->
 			{

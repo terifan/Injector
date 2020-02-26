@@ -80,12 +80,20 @@ public class Injector
 
 		if (list != null)
 		{
+			Binding result = null;
 			for (Binding binding : list)
 			{
 				if (binding.matches(aNamed, aEnclosingType))
 				{
-					return binding;
+					if (result == null || binding.isMoreSpecific(result))
+					{
+						result = binding;
+					}
 				}
+			}
+			if (result != null)
+			{
+				return result;
 			}
 		}
 
@@ -93,12 +101,20 @@ public class Injector
 
 		if (list != null)
 		{
+			Binding result = null;
 			for (Binding binding : list)
 			{
 				if (binding.matches(aNamed, aEnclosingType))
 				{
-					return binding;
+					if (result == null || binding.isMoreSpecific(result))
+					{
+						result = binding;
+					}
 				}
+			}
+			if (result != null)
+			{
+				return result;
 			}
 		}
 
@@ -364,7 +380,7 @@ public class Injector
 					{
 						binding.populate(new Context(aContext, aInstance), aInstance, aField);
 					}
-					else
+					else if (!injectAnnotation.optional())
 					{
 						aField.set(aInstance, null);
 					}
