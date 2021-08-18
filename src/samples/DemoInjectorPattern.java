@@ -15,7 +15,7 @@ import org.terifan.injector.PostConstruct;
 import org.terifan.injector.Provider;
 
 
-public class DemoSmallForm
+public class DemoInjectorPattern
 {
 	public static void main(String... args)
 	{
