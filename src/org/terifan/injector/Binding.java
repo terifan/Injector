@@ -29,4 +29,9 @@ public abstract class Binding
 	{
 		return (mEnclosingType == null || mEnclosingType == aEnclosingType) && (((aNamed == null || aNamed.isEmpty()) && (mNamed == null || mNamed.isEmpty())) || (aNamed != null && aNamed.equals(mNamed)));
 	}
+
+	boolean isMoreSpecific(Binding aBinding)
+	{
+		return mEnclosingType != null;
+	}
 }
