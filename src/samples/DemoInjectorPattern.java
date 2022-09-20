@@ -29,13 +29,16 @@ public class DemoInjectorPattern
 //			injector.bind(UserService.class).asSingleton();
 
 			// when developing & testing
-			injector.bind(UserService.class).toInstance(new MockUserService(new User("dave", "asasa sasas asasa sasas"), new User("steve", "ghghg hghgh ghghg hgh ghghg hgh")));
+			injector.bind(UserService.class).toInstance(new MockUserService(
+				new User("Dave", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
+				new User("Steve", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+			));
 
 			injector.bind(Color.class).named("background").toInstance(Color.RED);
 			injector.bind(Color.class).named("foreground").toProvider(()->Color.BLUE);
 
 			injector.bindConstant().named("textSize").to(24f);
-			injector.bindConstant().named("textSize").in(Style.class).to(96f);
+			injector.bindConstant().named("textSize").in(Style.class).to(48f);
 
 			// replace style
 //			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));

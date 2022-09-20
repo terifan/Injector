@@ -18,11 +18,14 @@ public class DemoFactoryPattern
 		try
 		{
 			Factory factory = new Factory();
-			factory.userService = caller -> new MockUserService(new User("dave", "asasa sasas asasa sasas"), new User("steve", "ghghg hghgh ghghg hgh ghghg hgh"));
+			factory.userService = caller -> new MockUserService(
+				new User("Dave", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
+				new User("Steve", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+			);
 			factory.background = caller -> Color.RED;
 			factory.foreground = caller -> Color.BLUE;
 			factory.style = caller -> new Style(factory);
-			factory.textSize = caller -> caller instanceof Style ? 96f : 24f;
+			factory.textSize = caller -> caller instanceof Style ? 48f : 24f;
 			factory.userPanel = caller -> new UserPanel(factory);
 
 			UserPanel panel = factory.userPanel.apply(null);
