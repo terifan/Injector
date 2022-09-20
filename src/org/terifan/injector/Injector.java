@@ -226,6 +226,7 @@ public class Injector
 				{
 					Object[] mappedValues = createMappedValues(aContext, aType, constructor);
 
+					constructor.setAccessible(true);
 					instance = (T)constructor.newInstance(mappedValues);
 				}
 				catch (InjectionException e)

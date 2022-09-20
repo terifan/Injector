@@ -54,9 +54,9 @@ public class DemoFactoryPattern
 
 	static class Style
 	{
-		Color mText;
-		Color mBackground;
-		float mTextSize = 12f;
+		private Color mText;
+		private Color mBackground;
+		private float mTextSize = 12f;
 
 
 		public Style(Factory aFactory)

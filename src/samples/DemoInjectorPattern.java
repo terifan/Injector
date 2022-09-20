@@ -58,13 +58,19 @@ public class DemoInjectorPattern
 
 	static class Style
 	{
-		@Inject @Named("foreground") Color mText;
-		@Inject @Named("background") Color mBackground;
-		@Inject(optional = true) @Named("textSize") float mTextSize = 12f;
+		private Color mText;
+		private Color mBackground;
+		private float mTextSize = 12f;
 
-		public Style()
+
+		@Inject
+		public Style(@Named("foreground") Color aText, @Named("background") Color aBackground, @Named("textSize") float aTextSize)
 		{
+			mText = aText;
+			mBackground = aBackground;
+			mTextSize =aTextSize;
 		}
+
 
 		public Style(Color aText, Color aBackground)
 		{
