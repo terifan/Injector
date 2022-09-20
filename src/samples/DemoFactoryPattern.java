@@ -18,10 +18,16 @@ public class DemoFactoryPattern
 		try
 		{
 			Factory factory = new Factory();
+
+			// normal running
+//			factory.userService = caller -> new UserService(factory);
+
+			// when developing & testing
 			factory.userService = caller -> new MockUserService(
 				new User("Dave", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
 				new User("Steve", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
 			);
+
 			factory.background = caller -> Color.RED;
 			factory.foreground = caller -> Color.BLUE;
 			factory.style = caller -> new Style(factory);
@@ -52,6 +58,7 @@ public class DemoFactoryPattern
 		Function<Object, Style> style;
 		Function<Object, Float> textSize;
 		Function<Object, UserPanel> userPanel;
+		private String database;
 	}
 
 
@@ -154,6 +161,16 @@ public class DemoFactoryPattern
 
 	static class UserService
 	{
+		private UserService()
+		{
+		}
+
+
+		public UserService(Factory aFactory)
+		{
+		}
+
+
 		User[] getUsers()
 		{
 			throw new UnsupportedOperationException();
