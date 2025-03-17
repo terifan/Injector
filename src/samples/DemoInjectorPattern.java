@@ -26,12 +26,12 @@ public class DemoInjectorPattern
 			injector.setLog(System.out);
 
 			// normal running
-//			injector.bind(UserService.class).asSingleton();
+//			injector.bind(DocumentService.class).asSingleton();
 
 			// when developing & testing
-			injector.bind(UserService.class).toInstance(new MockUserService(
-				new User("Dave", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
-				new User("Steve", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+			injector.bind(DocumentService.class).toInstance(new MockDocumentService(
+				new Document("Document A", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
+				new Document("Document B", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
 			));
 
 			injector.bind(Color.class).named("background").toInstance(Color.RED);
@@ -43,7 +43,7 @@ public class DemoInjectorPattern
 			// replace style
 //			injector.bind(Style.class).toInstance(new Style(Color.RED, Color.BLUE));
 
-			UserPanel panel = injector.getInstance(UserPanel.class);
+			DocumentPanel panel = injector.getInstance(DocumentPanel.class);
 
 			JFrame frame = new JFrame();
 			frame.add(panel);
@@ -83,18 +83,18 @@ public class DemoInjectorPattern
 	}
 
 
-	static class UserPanel extends JPanel
+	static class DocumentPanel extends JPanel
 	{
-		@Inject private Provider<UserService> mUserService;
+		@Inject private Provider<DocumentService> mDocumentService;
 		@Inject private Style mStyle;
 		@Inject(optional = true) @Named("textSize") private float mTextSize = 12f;
-		private User mUser;
+		private Document mDocument;
 
 
 		@PostConstruct
 		public void buildForm()
 		{
-			JList<User> list = new JList<>(mUserService.get().getUsers());
+			JList<Document> list = new JList<>(mDocumentService.get().getDocument());
 			list.setFont(list.getFont().deriveFont(mTextSize));
 
 			JTextArea text = new JTextArea();
@@ -105,15 +105,15 @@ public class DemoInjectorPattern
 
 			list.addListSelectionListener(aEvent ->
 			{
-				if (mUser != null && !mUser.mDescription.equals(text.getText()))
+				if (mDocument != null && !mDocument.mDescription.equals(text.getText()))
 				{
-					mUser.mDescription = text.getText();
-					mUserService.get().save(mUser);
+					mDocument.mDescription = text.getText();
+					mDocumentService.get().save(mDocument);
 				}
 
-				mUser = list.getModel().getElementAt(list.getSelectedIndex());
+				mDocument = list.getModel().getElementAt(list.getSelectedIndex());
 
-				text.setText(mUser.mDescription);
+				text.setText(mDocument.mDescription);
 			});
 
 			super.setLayout(new BorderLayout());
@@ -122,54 +122,54 @@ public class DemoInjectorPattern
 	}
 
 
-	static class MockUserService extends UserService
+	static class MockDocumentService extends DocumentService
 	{
-		User[] mUsers;
+		Document[] mDocuments;
 
 
-		public MockUserService(User... aUsers)
+		public MockDocumentService(Document... aDocuments)
 		{
-			mUsers = aUsers;
+			mDocuments = aDocuments;
 		}
 
 
 		@Override
-		public User[] getUsers()
+		public Document[] getDocument()
 		{
-			return mUsers;
+			return mDocuments;
 		}
 
 
 		@Override
-		public void save(User aUser)
+		public void save(Document aDocument)
 		{
-			System.out.println("saved user: " + aUser + "=" + aUser.mDescription);
+			System.out.println("saved document: " + aDocument + "=" + aDocument.mDescription);
 		}
 	}
 
 
-	static class UserService
+	static class DocumentService
 	{
-		User[] getUsers()
+		Document[] getDocument()
 		{
 			throw new UnsupportedOperationException();
 		}
 
 
-		void save(User aUser)
+		void save(Document aDocument)
 		{
 			throw new UnsupportedOperationException();
 		}
 	}
 
 
-	static class User
+	static class Document
 	{
 		String mName;
 		String mDescription;
 
 
-		public User(String aName, String aDescription)
+		public Document(String aName, String aDescription)
 		{
 			mName = aName;
 			mDescription = aDescription;

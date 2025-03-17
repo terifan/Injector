@@ -20,21 +20,21 @@ public class DemoFactoryPattern
 			Factory factory = new Factory();
 
 			// normal running
-//			factory.userService = caller -> new UserService(factory);
+//			factory.documentService = caller -> new DocumentService(factory);
 
 			// when developing & testing
-			factory.userService = caller -> new MockUserService(
-				new User("Dave", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
-				new User("Steve", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
+			factory.documentService = caller -> new MockDocumentService(
+				new Document("Document A", "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."),
+				new Document("Document B", "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.")
 			);
 
 			factory.background = caller -> Color.RED;
 			factory.foreground = caller -> Color.BLUE;
 			factory.style = caller -> new Style(factory);
 			factory.textSize = caller -> caller instanceof Style ? 48f : 24f;
-			factory.userPanel = caller -> new UserPanel(factory);
+			factory.documentPanel = caller -> new DocumentPanel(factory);
 
-			UserPanel panel = factory.userPanel.apply(null);
+			DocumentPanel panel = factory.documentPanel.apply(null);
 
 			JFrame frame = new JFrame();
 			frame.add(panel);
@@ -52,13 +52,12 @@ public class DemoFactoryPattern
 
 	static class Factory
 	{
-		Function<Object, UserService> userService;
+		Function<Object, DocumentService> documentService;
 		Function<Object, Color> background;
 		Function<Object, Color> foreground;
 		Function<Object, Style> style;
 		Function<Object, Float> textSize;
-		Function<Object, UserPanel> userPanel;
-		private String database;
+		Function<Object, DocumentPanel> documentPanel;
 	}
 
 
@@ -85,17 +84,17 @@ public class DemoFactoryPattern
 	}
 
 
-	static class UserPanel extends JPanel
+	static class DocumentPanel extends JPanel
 	{
-		private UserService mUserService;
+		private DocumentService mDocumentService;
 		private Style mStyle;
 		private float mTextSize = 12f;
-		private User mUser;
+		private Document mDocument;
 
 
-		public UserPanel(Factory aFactory)
+		public DocumentPanel(Factory aFactory)
 		{
-			mUserService = aFactory.userService.apply(this);
+			mDocumentService = aFactory.documentService.apply(this);
 			mStyle = aFactory.style.apply(this);
 			mTextSize = aFactory.textSize.apply(this);
 
@@ -105,7 +104,7 @@ public class DemoFactoryPattern
 
 		public void buildForm()
 		{
-			JList<User> list = new JList<>(mUserService.getUsers());
+			JList<Document> list = new JList<>(mDocumentService.getDocument());
 			list.setFont(list.getFont().deriveFont(mTextSize));
 
 			JTextArea text = new JTextArea();
@@ -116,15 +115,15 @@ public class DemoFactoryPattern
 
 			list.addListSelectionListener(aEvent ->
 			{
-				if (mUser != null && !mUser.mDescription.equals(text.getText()))
+				if (mDocument != null && !mDocument.mDescription.equals(text.getText()))
 				{
-					mUser.mDescription = text.getText();
-					mUserService.save(mUser);
+					mDocument.mDescription = text.getText();
+					mDocumentService.save(mDocument);
 				}
 
-				mUser = list.getModel().getElementAt(list.getSelectedIndex());
+				mDocument = list.getModel().getElementAt(list.getSelectedIndex());
 
-				text.setText(mUser.mDescription);
+				text.setText(mDocument.mDescription);
 			});
 
 			super.setLayout(new BorderLayout());
@@ -133,64 +132,64 @@ public class DemoFactoryPattern
 	}
 
 
-	static class MockUserService extends UserService
+	static class MockDocumentService extends DocumentService
 	{
-		User[] mUsers;
+		Document[] mDocuments;
 
 
-		public MockUserService(User... aUsers)
+		public MockDocumentService(Document... aDocuments)
 		{
-			mUsers = aUsers;
+			mDocuments = aDocuments;
 		}
 
 
 		@Override
-		public User[] getUsers()
+		public Document[] getDocument()
 		{
-			return mUsers;
+			return mDocuments;
 		}
 
 
 		@Override
-		public void save(User aUser)
+		public void save(Document aDocument)
 		{
-			System.out.println("saved user: " + aUser + "=" + aUser.mDescription);
+			System.out.println("saved document: " + aDocument + "=" + aDocument.mDescription);
 		}
 	}
 
 
-	static class UserService
+	static class DocumentService
 	{
-		private UserService()
+		private DocumentService()
 		{
 		}
 
 
-		public UserService(Factory aFactory)
+		public DocumentService(Factory aFactory)
 		{
 		}
 
 
-		User[] getUsers()
+		Document[] getDocument()
 		{
 			throw new UnsupportedOperationException();
 		}
 
 
-		void save(User aUser)
+		void save(Document aDocument)
 		{
 			throw new UnsupportedOperationException();
 		}
 	}
 
 
-	static class User
+	static class Document
 	{
 		String mName;
 		String mDescription;
 
 
-		public User(String aName, String aDescription)
+		public Document(String aName, String aDescription)
 		{
 			mName = aName;
 			mDescription = aDescription;
