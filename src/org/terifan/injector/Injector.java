@@ -1,5 +1,6 @@
 package org.terifan.injector;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -11,6 +12,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 
 public class Injector
@@ -416,4 +418,10 @@ public class Injector
 			}
 		}
 	};
+
+
+	public void load(Class aClass, String aPropertiesFile)
+	{
+		new PropertiesReader().parse(this, aClass, aPropertiesFile);
+	}
 }
