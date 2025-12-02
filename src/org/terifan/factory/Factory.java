@@ -6,6 +6,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 
+/**
+ * Implementation of the Factory pattern.
+ */
 public class Factory
 {
 	private final HashMap<Class, Supplier> mSuppliers = new HashMap<>();

@@ -1,5 +1,6 @@
 package org.terifan.factory;
 
+import java.util.Date;
 import java.util.Random;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
